@@ -1,4 +1,4 @@
-#include "../../include/AudioConducker/core/DuckingEngine.h"
+#include "AudioConducker/core/DuckingEngine.h"
 
 namespace AudioConducker{
 

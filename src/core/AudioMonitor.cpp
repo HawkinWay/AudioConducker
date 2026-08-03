@@ -1,4 +1,4 @@
-#include "../../include/AudioConducker/core/AudioMonitor.h"
+#include "AudioConducker/core/AudioMonitor.h"
 
 namespace AudioConducker{
 

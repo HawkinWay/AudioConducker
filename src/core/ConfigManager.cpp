@@ -1,4 +1,4 @@
-#include "../../include/AudioConducker/core/ConfigManager.h"
+#include "AudioConducker/core/ConfigManager.h"
 
 namespace AudioConducker{
 
