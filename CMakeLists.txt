@@ -10,20 +10,31 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Third party dependencies
+include(cmake/Dependencies.cmake)
+
 # Build options
 option(BUILD_TESTS "Build tests" ON)
 
 # Main executable
 add_executable(AudioConducker 
     src/main.cpp
+    src/core/Logger.cpp
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp
 )
+
 target_include_directories(
-        AudioConducker
-        PRIVATE
-            include
+    AudioConducker
+    PRIVATE
+        include
+)
+
+target_link_libraries(
+    AudioConducker
+    PRIVATE
+        spdlog::spdlog
 )
 
 # Compiler warnings
