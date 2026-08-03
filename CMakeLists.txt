@@ -14,7 +14,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(BUILD_TESTS "Build tests" ON)
 
 # Main executable
-add_executable(AudioConducker src/main.cpp)
+add_executable(AudioConducker 
+    src/main.cpp
+    src/core/AudioMonitor.cpp
+    src/core/ConfigManager.cpp
+    src/core/DuckingEngine.cpp
+)
 target_include_directories(
         AudioConducker
         PRIVATE
