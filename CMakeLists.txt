@@ -13,6 +13,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Third party dependencies
 include(cmake/Dependencies.cmake)
 
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(
+	PIPEWIRE
+	REQUIRED
+		libpipewire-0.3
+)
+
 # Build options
 option(BUILD_TESTS "Build tests" ON)
 
@@ -20,6 +28,7 @@ option(BUILD_TESTS "Build tests" ON)
 add_executable(AudioConducker 
     src/main.cpp
     src/core/Logger.cpp
+    src/pipewire/NodeObserver.cpp
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp
@@ -31,10 +40,19 @@ target_include_directories(
         include
 )
 
+target_include_directories(
+    AudioConducker
+    PRIVATE
+        include
+        ${PIPEWIRE_INCLUDE_DIRS}
+)
+
+
 target_link_libraries(
     AudioConducker
     PRIVATE
         spdlog::spdlog
+        ${PIPEWIRE_LIBRARIES}
 )
 
 # Compiler warnings
