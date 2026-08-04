@@ -1,5 +1,7 @@
 #include "AudioConducker/core/Logger.h"
-#include "pipewire/NodeObserver.h"
+#include "AudioConducker/pipewire/NodeObserver.h"
+#include "AudioConducker/pipewire/PipeWireContext.h"
+#include <iostream>
 
 int main()
 {
@@ -15,6 +17,14 @@ int main()
     //test pipewire
     AudioConducker::NodeObserver observer;
     observer.run();
+
+    try{
+        AudioConducker::PipeWireContext context;
+        std::cout << "connected to pipewire\n";
+    }
+    catch(const std::exception& e){
+        std::cerr << e.what() << '\n';
+    }
 
     return 0;
 }

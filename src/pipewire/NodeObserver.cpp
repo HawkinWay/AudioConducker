@@ -1,4 +1,4 @@
-#include "NodeObserver.h"
+#include "AudioConducker/pipewire/NodeObserver.h"
 #include <iostream>
 
 namespace AudioConducker{
