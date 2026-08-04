@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Third party dependencies
 include(cmake/Dependencies.cmake)
 
@@ -29,15 +31,10 @@ add_executable(AudioConducker
     src/main.cpp
     src/core/Logger.cpp
     src/pipewire/NodeObserver.cpp
+    src/pipewire/PipeWireContext.cpp
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp
-)
-
-target_include_directories(
-    AudioConducker
-    PRIVATE
-        include
 )
 
 target_include_directories(
