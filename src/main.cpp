@@ -12,15 +12,17 @@ int main()
 
     AudioConducker::Logger::debug("Debug message");
 
-    AudioConducker::Logger::error("Example error");
+    AudioConducker::Logger::error("Example error\n");
 
     //test pipewire
-    AudioConducker::NodeObserver observer;
-    observer.run();
-
     try{
         AudioConducker::PipeWireContext context;
-        std::cout << "connected to pipewire\n";
+        std::cout << "Pipewire context initialized.\n";
+
+        AudioConducker::NodeObserver observer(context);
+        std::cout << "Start looping... ...\n";
+
+	    pw_main_loop_run(context.getMainLoop());
     }
     catch(const std::exception& e){
         std::cerr << e.what() << '\n';
