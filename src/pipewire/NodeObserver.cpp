@@ -18,6 +18,9 @@ NodeObserver::~NodeObserver(){
     pw_proxy_destroy(reinterpret_cast<pw_proxy*>(registry_));
 }
 
+const std::vector<AudioStream>& NodeObserver::getStreams() const{
+	return streams_;
+}
 
 void NodeObserver::registry_event_global(
     void *data, 
@@ -30,13 +33,29 @@ void NodeObserver::registry_event_global(
     if(strcmp(type, PW_TYPE_INTERFACE_Node) != 0){
         return;
     }
+    
+    auto observer = static_cast<NodeObserver*>(data);
+    
     std::cout << "Node found\n" << "id: " << id << '\n';
     
     if(props){
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
-        
+        const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
+        const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
+
+        if(!media_class)    return;
+        if(strcmp(media_class, "Stream/Output/Audio") != 0)     return;
+
         if(name){
             std::cout << "name: " << name << '\n';
+            
+            AudioStream stream = {
+                .id = id,
+                .name = name,
+                .application = app ? app : "",
+            };
+        
+            observer->streams_.push_back(stream);
         }
     }
     

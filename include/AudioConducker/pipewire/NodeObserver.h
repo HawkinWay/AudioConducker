@@ -1,7 +1,9 @@
 #pragma once
 
+#include "AudioConducker/audio/AudioStream.h"
 #include "PipeWireContext.h"
 #include <pipewire/pipewire.h>
+#include <vector>
 
 namespace AudioConducker{
 
@@ -11,6 +13,7 @@ public:
 	
 	~NodeObserver();
 
+	const std::vector<AudioStream>& getStreams() const;
 private:
 	static void registry_event_global(
 		void *data, 
@@ -25,6 +28,8 @@ private:
 
 	struct pw_registry* registry_;
 	struct spa_hook listener_;		// keep track of the listener
+
+	std::vector<AudioStream> streams_;
 };
 
 } // namespace AudioConducker
