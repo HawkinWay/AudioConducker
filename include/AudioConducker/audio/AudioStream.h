@@ -11,6 +11,7 @@ struct AudioStream{
     StreamId id;
     std::string name;
     std::string application;
+    std::string mediaClass;
     float volume= 1.f;
     bool isActive = false;
 };
