@@ -36,27 +36,33 @@ void NodeObserver::registry_event_global(
     
     auto observer = static_cast<NodeObserver*>(data);
     
-    std::cout << "Node found\n" << "id: " << id << '\n';
+    std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
     
     if(props){
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
         const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
         const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
 
-        if(!media_class)    return;
-        if(strcmp(media_class, "Stream/Output/Audio") != 0)     return;
+        // if(!media_class)    return;
 
-        if(name){
-            std::cout << "name: " << name << '\n';
-            
-            AudioStream stream = {
-                .id = id,
-                .name = name,
-                .application = app ? app : "",
-            };
+        bool isApplication = app != nullptr || (name && strstr(name, "REAPER") != nullptr);
+        if(!isApplication)    return;
+
+        if(!name)       return;
+
+        AudioStream stream = {
+            .id = id,
+            .name = name ? name : "",
+            .application = app ? app : "",
+            .mediaClass = media_class ? media_class : "",
+        };
         
-            observer->streams_.push_back(stream);
-        }
+        std::cout << "name: " << (name ? name : "") << '\n';
+        std::cout << "application: " << (app ? app : "") << '\n';
+        std::cout << "media class: " << (media_class ? media_class : "") << '\n';
+
+
+        observer->streams_.push_back(stream);
     }
     
 }
