@@ -32,6 +32,7 @@ add_executable(AudioConducker
     src/core/Logger.cpp
     src/pipewire/NodeObserver.cpp
     src/pipewire/PipeWireContext.cpp
+    src/pipewire/PipeWireBackend.cpp
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp

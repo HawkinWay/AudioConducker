@@ -1,7 +1,10 @@
 #include "AudioConducker/core/Logger.h"
 #include "AudioConducker/pipewire/NodeObserver.h"
 #include "AudioConducker/pipewire/PipeWireContext.h"
+#include "AudioConducker/pipewire/PipeWireBackend.h"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 int main()
 {
@@ -19,14 +22,19 @@ int main()
         AudioConducker::PipeWireContext context;
         std::cout << "Pipewire context initialized.\n";
 
-        AudioConducker::NodeObserver observer(context);
-        std::cout << "Start looping... ...\n";
+        
+        AudioConducker::PipeWireBackend backend(context);
+        std::cout << "\nStart looping... ...\n";
 
-	    pw_main_loop_run(context.getMainLoop());
+        pw_main_loop_run(context.getMainLoop());
+        
+        // backend.setVolume(84, 0.2f);
+
     }
     catch(const std::exception& e){
         std::cerr << e.what() << '\n';
     }
+
 
     return 0;
 }

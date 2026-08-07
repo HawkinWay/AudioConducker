@@ -4,16 +4,24 @@
 #include "PipeWireContext.h"
 #include <pipewire/pipewire.h>
 #include <vector>
+#include <unordered_map>
+#include <functional>
+#include <utility>
 
 namespace AudioConducker{
 
 class NodeObserver{
 public:
-	explicit NodeObserver(PipeWireContext& context);
+	using NodeCallback = std::function<void(StreamId)>;
+
+	NodeObserver(PipeWireContext& context, NodeCallback callback);
 	
 	~NodeObserver();
 
 	const std::vector<AudioStream>& getStreams() const;
+
+	struct pw_registry* getRegistry() const;
+
 private:
 	static void registry_event_global(
 		void *data, 
@@ -30,6 +38,8 @@ private:
 	struct spa_hook listener_;		// keep track of the listener
 
 	std::vector<AudioStream> streams_;
+
+	NodeCallback callback_;
 };
 
 } // namespace AudioConducker
