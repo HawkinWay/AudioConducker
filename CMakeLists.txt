@@ -20,38 +20,57 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(
 	PIPEWIRE
 	REQUIRED
+    IMPORTED_TARGET
 		libpipewire-0.3
 )
 
 # Build options
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
+
+# Core library
+add_library(AudioConduckerCore
+    src/core/Logger.cpp
+    src/core/AudioMonitor.cpp
+    src/core/ConfigManager.cpp
+    src/core/DuckingEngine.cpp
+
+    src/pipewire/NodeObserver.cpp
+    src/pipewire/PipeWireContext.cpp
+    src/pipewire/PipeWireBackend.cpp
+)
+
+target_include_directories(
+    AudioConduckerCore
+    PUBLIC
+        include
+)
+
+target_link_libraries(
+    AudioConduckerCore
+    PUBLIC
+        spdlog::spdlog
+        PkgConfig::PIPEWIRE
+)
+
+target_compile_features(
+    AudioConduckerCore
+    PUBLIC
+        cxx_std_20
+)
+
 
 # Main executable
 add_executable(AudioConducker 
     src/main.cpp
-    src/core/Logger.cpp
-    src/pipewire/NodeObserver.cpp
-    src/pipewire/PipeWireContext.cpp
-    src/pipewire/PipeWireBackend.cpp
-    src/core/AudioMonitor.cpp
-    src/core/ConfigManager.cpp
-    src/core/DuckingEngine.cpp
 )
-
-target_include_directories(
-    AudioConducker
-    PRIVATE
-        include
-        ${PIPEWIRE_INCLUDE_DIRS}
-)
-
 
 target_link_libraries(
     AudioConducker
     PRIVATE
-        spdlog::spdlog
-        ${PIPEWIRE_LIBRARIES}
+        AudioConduckerCore
 )
+
+
 
 # Compiler warnings
 if(MSVC)

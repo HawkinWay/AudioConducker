@@ -8,9 +8,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(AudioConduckerTests test_main.cpp)
+add_executable(AudioConduckerTests test_main.cpp PipeWireBackendTest.cpp)
 
-target_link_libraries(AudioConduckerTests PRIVATE GTest::gtest_main)
+target_link_libraries(AudioConduckerTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
 include(GoogleTest)
 
