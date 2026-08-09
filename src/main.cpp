@@ -1,7 +1,7 @@
 #include "AudioConducker/core/Logger.h"
-#include "AudioConducker/pipewire/NodeObserver.h"
-#include "AudioConducker/pipewire/PipeWireContext.h"
-#include "AudioConducker/pipewire/PipeWireBackend.h"
+#include "AudioConducker/platform/pipewire/NodeObserver.h"
+#include "AudioConducker/platform/pipewire/PipeWireContext.h"
+#include "AudioConducker/platform/pipewire/PipeWireBackend.h"
 #include <iostream>
 #include <chrono>
 #include <thread>

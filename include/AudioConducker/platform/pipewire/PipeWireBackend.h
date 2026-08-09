@@ -1,8 +1,8 @@
 #pragma once
 
 #include "AudioConducker/audio/IAudioBackend.h"
-#include "AudioConducker/pipewire/PipeWireContext.h"
-#include "AudioConducker/pipewire/NodeObserver.h"
+#include "AudioConducker/platform/pipewire/PipeWireContext.h"
+#include "AudioConducker/platform/pipewire/NodeObserver.h"
 
 #include <pipewire/pipewire.h>
 #include <spa/param/props.h>

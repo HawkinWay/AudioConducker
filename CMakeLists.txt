@@ -34,9 +34,9 @@ add_library(AudioConduckerCore
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp
 
-    src/pipewire/NodeObserver.cpp
-    src/pipewire/PipeWireContext.cpp
-    src/pipewire/PipeWireBackend.cpp
+    src/platform/pipewire/NodeObserver.cpp
+    src/platform/pipewire/PipeWireContext.cpp
+    src/platform/pipewire/PipeWireBackend.cpp
 )
 
 target_include_directories(
