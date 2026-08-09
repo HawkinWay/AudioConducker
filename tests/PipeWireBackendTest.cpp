@@ -2,8 +2,8 @@
 #include <thread>
 #include <chrono>
 
-#include "AudioConducker/pipewire/PipeWireContext.h"
-#include "AudioConducker/pipewire/PipeWireBackend.h"
+#include "AudioConducker/platform/pipewire/PipeWireContext.h"
+#include "AudioConducker/platform/pipewire/PipeWireBackend.h"
 
 using namespace AudioConducker;
 
