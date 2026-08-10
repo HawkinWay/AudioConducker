@@ -2,6 +2,7 @@
 #include "AudioConducker/platform/pipewire/NodeObserver.h"
 #include "AudioConducker/platform/pipewire/PipeWireContext.h"
 #include "AudioConducker/platform/pipewire/PipeWireBackend.h"
+#include "AudioConducker/platform/pipewire/PipeWireStream.h"
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -21,6 +22,15 @@ int main()
     try{
         AudioConducker::PipeWireContext context;
         std::cout << "Pipewire context initialized.\n";
+
+        AudioConducker::AudioStream firefox{
+            .id = 114,
+            .name = "Firefox",
+        };
+
+        AudioConducker::PipeWireStream stream(context, firefox);
+
+        stream.connect(114);
 
         
         AudioConducker::PipeWireBackend backend(context);

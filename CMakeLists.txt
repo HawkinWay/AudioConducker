@@ -39,6 +39,7 @@ add_library(AudioConduckerCore
     src/platform/pipewire/NodeObserver.cpp
     src/platform/pipewire/PipeWireContext.cpp
     src/platform/pipewire/PipeWireBackend.cpp
+    src/platform/pipewire/PipeWireStream.cpp
 )
 
 target_include_directories(
