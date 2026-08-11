@@ -1,6 +1,8 @@
 #pragma once
 
 #include "AudioConducker/audio/IAudioBackend.h"
+#include <string>
+#include <optional>
 
 namespace AudioConducker{
 
@@ -11,6 +13,9 @@ public:
     void update();
 
     std::vector<AudioStream> getActiveStreams() const;
+
+    std::optional<StreamId> findStreamByApplication(const std::string& application) const;
+
 private:
     AudioBackend& backend_;
     std::vector<AudioStream> streams_;

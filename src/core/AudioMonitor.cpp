@@ -12,4 +12,13 @@ std::vector<AudioStream> AudioMonitor::getActiveStreams() const{
     return streams_;
 }
 
+std::optional<StreamId> AudioMonitor::findStreamByApplication(const std::string& application) const{
+    for(const auto& stream : streams_){
+        if(stream.application == application){
+            return stream.id;
+        }
+    }
+    return std::nullopt;
+}
+
 } // namespace AudioConducker
