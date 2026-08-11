@@ -1,18 +1,26 @@
 #pragma once
 
 #include "AudioConducker/audio/IAudioBackend.h"
+#include <vector>
+#include <unordered_map>
 
 namespace AudioConducker{
 
 class DuckingEngine{
 public:
-    explicit DuckingEngine(AudioBackend& backend);
+    DuckingEngine(AudioBackend& backend, float duckLevel = 0.2f);
 
     void process(StreamId focusStream);
-
+    
 private:
+	void restore();
+    
+	void duck(StreamId focusStream, const std::vector<AudioStream>& streams);
+
     AudioBackend& backend_;
-    float duckVolume_ = 0.2f;
+    float duckLevel_;
+    std::unordered_map<StreamId, float> originalVolumes_;
+    bool isActive_{false};
 };
 
 } // namespace AudioConducker
