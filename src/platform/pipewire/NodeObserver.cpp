@@ -75,6 +75,7 @@ void NodeObserver::registry_event_global(
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
         const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
         const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
+	    // const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
         
         // if(!media_class)    return;
         
@@ -88,12 +89,14 @@ void NodeObserver::registry_event_global(
             .name = name ? name : "",
             .application = app ? app : "",
             .mediaClass = media_class ? media_class : "",
+	        // .mediaName = media_name ? media_name : ""
         };
         
         std::cout << "name: " << (name ? name : "") << '\n';
         std::cout << "application: " << (app ? app : "") << '\n';
         std::cout << "media class: " << (media_class ? media_class : "") << '\n';
-        
+	    // std::cout << "media name: " << (media_name ? media_name : "") << '\n'; 
+
         observer->streams_.push_back(stream);
         
         if(observer->callback_ != nullptr){
