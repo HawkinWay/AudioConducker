@@ -7,7 +7,7 @@ std::string ConfigManager::getFocusApplication() const{
 }
 
 float ConfigManager::getDuckVolume() const{
-    return duckVolume_;
+    return duckLevel_;
 }
 
 } // namespace AudioConducker

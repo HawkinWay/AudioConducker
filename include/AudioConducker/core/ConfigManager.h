@@ -13,7 +13,7 @@ public:
 private:
     std::string focusApplication_ = "Browser";
 
-    float duckVolume_ = 0.2f;
+    float duckLevel_ = 0.2f;
 };
 
 } // namespace AudioConducker
