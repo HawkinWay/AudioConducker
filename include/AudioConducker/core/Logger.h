@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <spdlog/spdlog.h>
+
 
 namespace AudioConducker{
 

@@ -15,7 +15,7 @@ struct AudioStream{
     // std::string mediaName;
     float volume= 1.f;
     bool isActive = false;
-    bool controllable = false;
+    bool controllable = true;
 };
 
 

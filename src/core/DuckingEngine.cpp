@@ -1,10 +1,13 @@
 #include "AudioConducker/core/DuckingEngine.h"
 
+#include <iostream>
+
 namespace AudioConducker{
 
 DuckingEngine::DuckingEngine(AudioBackend& backend, float duckLevel): backend_(backend), duckLevel_(duckLevel){}
 
 void DuckingEngine::process(StreamId focusStream){
+    std::cout << "DuckingEngine processing...\n";
     auto streams = backend_.getStreams();
 
     bool focusActive = false;

@@ -8,9 +8,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(AudioConduckerTests test_main.cpp PipeWireBackendTest.cpp)
+add_executable(AudioConduckerTests PipeWireBackendTest.cpp)
 
 target_link_libraries(AudioConduckerTests PRIVATE AudioConduckerCore GTest::gtest_main)
+
+add_executable(AudioConduckerIntegrationTests test_main.cpp)
+
+target_link_libraries(AudioConduckerIntegrationTests PRIVATE AudioConduckerCore GTest::gtest_main)
+
 
 include(GoogleTest)
 

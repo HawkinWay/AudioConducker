@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <optional>
 #include <utility>
 
 namespace AudioConducker{
@@ -20,7 +21,11 @@ public:
 
 	const std::vector<AudioStream>& getStreams() const;
 
+	std::optional<std::reference_wrapper<AudioStream>> getStreamById(StreamId id);
+
 	struct pw_registry* getRegistry() const;
+
+	void setActive(StreamId id, bool active);
 
 private:
 	static void registry_event_global(

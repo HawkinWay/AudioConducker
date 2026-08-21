@@ -10,6 +10,8 @@ public:
 
     bool process(const float* samples, size_t count);
 
+    float getRMS(const float* samples, size_t count) const;
+
 private:
     float threshold_;
 };

@@ -6,7 +6,7 @@ std::string ConfigManager::getFocusApplication() const{
     return focusApplication_;
 }
 
-float ConfigManager::getDuckVolume() const{
+float ConfigManager::getDuckLevel() const{
     return duckLevel_;
 }
 

@@ -1,6 +1,5 @@
 #include "AudioConducker/core/Logger.h"
 
-#include <spdlog/spdlog.h>
 
 namespace AudioConducker{
 

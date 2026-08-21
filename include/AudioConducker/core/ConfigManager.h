@@ -8,10 +8,10 @@ class ConfigManager{
 public:
     std::string getFocusApplication() const;
 
-    float getDuckVolume() const;
+    float getDuckLevel() const;
 
 private:
-    std::string focusApplication_ = "Browser";
+    std::string focusApplication_ = "mpv";
 
     float duckLevel_ = 0.2f;
 };

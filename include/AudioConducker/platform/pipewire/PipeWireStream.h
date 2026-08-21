@@ -1,11 +1,13 @@
 #pragma once
 
+#include "AudioConducker/core/Logger.h"
 #include "AudioConducker/audio/AudioStream.h"
 #include "AudioConducker/audio/ActivityDetector.h"
 #include "AudioConducker/platform/pipewire/PipeWireContext.h"
 
 #include <spa/param/audio/format-utils.h>
 #include <pipewire/pipewire.h>
+#include <functional>
 
 /* Responsibilities:
  *      1. Create PipeWire stream
@@ -19,7 +21,9 @@ namespace AudioConducker{
 
 class PipeWireStream{
 public:
-    PipeWireStream(PipeWireContext& context, AudioStream& stream);
+    using ActivityCallback = std::function<void(StreamId, bool)>;
+
+    PipeWireStream(PipeWireContext& context, StreamId id, ActivityCallback activityCallback = nullptr);
 
     ~PipeWireStream();
 
@@ -32,15 +36,21 @@ private:
 
     void process();
     
+    static void on_state_changed(void *data, pw_stream_state old, pw_stream_state state, const char *error);
+
     static void on_stream_param_changed(void *_data, uint32_t id, const struct spa_pod *param);
 
     static const struct pw_stream_events stream_events_;
 
+    StreamId id_;
     PipeWireContext& context_;
-    AudioStream& audioStream_;
+
+    ActivityCallback activityCallback_;
+    bool lastActive_{false};
+
     struct pw_stream* stream_{nullptr};
-    struct spa_audio_info format_{};
     ActivityDetector detector_;
+    struct spa_audio_info format_{};
 };
 
 } // namespace AudioConducker
