@@ -45,7 +45,9 @@ void DuckingEngine::duck(StreamId focusStream, const std::vector<AudioStream>& s
         return;
     }
 
-    for(auto &stream : streams){
+    originalVolumes_.clear();
+
+    for(const auto &stream : streams){
         if(stream.id == focusStream)    continue;
         if(!stream.controllable)        continue;
 

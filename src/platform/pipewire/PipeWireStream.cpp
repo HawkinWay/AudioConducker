@@ -73,10 +73,14 @@ void PipeWireStream::on_process(void* userdata){
 }
 
 void PipeWireStream::process(){
-    spdlog::info(
-        "process() thread {}",
-        std::hash<std::thread::id>{}(std::this_thread::get_id())
-    );
+    static uint64_t processThreadCount = 0;
+    processThreadCount++;
+    if(processThreadCount % 100 == 0){
+        spdlog::info(
+            "process() thread {}",
+            std::hash<std::thread::id>{}(std::this_thread::get_id())
+        );
+    }
 
     struct pw_buffer* pw_buff;
     struct spa_buffer* spa_buff;

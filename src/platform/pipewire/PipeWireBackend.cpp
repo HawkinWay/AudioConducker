@@ -7,13 +7,11 @@ PipeWireBackend::PipeWireBackend(PipeWireContext& context): context_(context){
 }
 
 PipeWireBackend::~PipeWireBackend(){
-    struct pw_loop* pw_loop = pw_main_loop_get_loop(context_.getMainLoop());
-
     for(auto& node : nodes_){
         struct DestroyProxyData data = {
             .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
         };
-        pw_loop_invoke(pw_loop, nullptr, 0, &data, sizeof(data), do_destroy_proxy, nullptr);
+        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
     }
 }
 
@@ -43,9 +41,7 @@ void PipeWireBackend::setVolume(StreamId id, float volume){
         .volume = volume,
     };
 
-    struct pw_loop* pw_loop = pw_main_loop_get_loop(context_.getMainLoop());
-
-    pw_loop_invoke(pw_loop, nullptr, 0, &data, sizeof(data), do_set_volume, nullptr);
+    pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 0, nullptr);
 }
 
 void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
@@ -80,14 +76,14 @@ void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
     }
 }
 
-int PipeWireBackend::do_set_volume(struct pw_loop* loop, struct spa_source* source, void* data, size_t size, void* user_data){
-    auto* vd = static_cast<SetVolumeData*>(data);
+int PipeWireBackend::do_set_volume(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+    const auto* vd = static_cast<const SetVolumeData*>(data);
     vd->self->setVolumeInternal(vd->id, vd->volume);
     return 0;
 }
 
-int PipeWireBackend::do_destroy_proxy(struct pw_loop* loop, struct spa_source* source, void* data, size_t size, void* user_data){
-    auto* pd = static_cast<DestroyProxyData*>(data);
+int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+    const auto* pd = static_cast<const DestroyProxyData*>(data);
     if(pd->proxy){
         pw_proxy_destroy(pd->proxy);
     }

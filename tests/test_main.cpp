@@ -91,9 +91,8 @@ TEST(AudioConduckerIntegrationTests, integration){
 	}
 
 
-	Logger::info("\n====================== Strat =======================");
-	static int count = 5;
-	while(count--){
+	Logger::info("\n====================== DUCK =======================");
+	for(int count = 0; count < 25; count++){
 		monitor.update();
 
 		auto focus = monitor.findStreamByApplication(config.getFocusApplication());
@@ -111,6 +110,29 @@ TEST(AudioConduckerIntegrationTests, integration){
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(300));
 	}
+
+	std::cin.get();
+
+	Logger::info("\n====================== RESTORE =======================");
+	for(int count = 0; count < 25; count++){
+		monitor.update();
+
+		auto focus = monitor.findStreamByApplication(config.getFocusApplication());
+
+		spdlog::info("Focus Application ID: {}", *focus);
+
+		if(!focus){
+			spdlog::warn("[TEST] Focus application '{}' not found, skipping process()",
+						config.getFocusApplication());
+		}else{
+			spdlog::info("Focus Application ID: {}", *focus);
+			engine.process(*focus);
+		}
+
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	}
+
 
 	pw_main_loop_quit(context.getMainLoop());
 	

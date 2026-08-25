@@ -39,13 +39,13 @@ private:
 		float volume;
 	};
 
-	static int do_set_volume(struct pw_loop* loop, struct spa_source* source, void* data, size_t size, void* user_data);
+	static int do_set_volume(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 
 	struct DestroyProxyData {
     	struct pw_proxy* proxy;
 	};
 
-	static int do_destroy_proxy(struct pw_loop* loop, struct spa_source* source, void* data, size_t size, void* user_data);
+	static int do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 
 	void onNodeAdded(StreamId id);
 
