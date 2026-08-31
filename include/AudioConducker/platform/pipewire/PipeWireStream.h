@@ -6,6 +6,8 @@
 #include "AudioConducker/platform/pipewire/PipeWireContext.h"
 
 #include <spa/param/audio/format-utils.h>
+#include <spa/param/props.h>
+#include <spa/pod/parser.h>
 #include <pipewire/pipewire.h>
 #include <functional>
 
@@ -29,9 +31,17 @@ public:
 
     void connect(StreamId id);
 
-    void stop();
+    const AudioStream& getAudioStream() const;
 
 private:
+    void updateVolumeFromProps(const spa_pod* param);
+
+    static void on_param(void *data, int seq, int32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
+
+    // void queryVolume();
+    
+    // void handleProps(const spa_pod* param);
+
     static void on_process(void* userdata);
 
     void process();
@@ -44,6 +54,7 @@ private:
 
     StreamId id_;
     PipeWireContext& context_;
+    AudioStream audioStream_;
 
     ActivityCallback activityCallback_;
     bool lastActive_{false};

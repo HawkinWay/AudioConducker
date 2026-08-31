@@ -51,6 +51,7 @@ private:
 
 	void onActivityChanged(StreamId id, bool active);
 
+private:
 	PipeWireContext& context_;
 	
 	// struct NodeInfo{
