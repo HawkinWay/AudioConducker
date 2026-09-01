@@ -51,6 +51,13 @@ void DuckingEngine::duck(StreamId focusStream, const std::vector<AudioStream>& s
         if(stream.id == focusStream)    continue;
         if(!stream.controllable)        continue;
 
+        spdlog::info(
+            "DUCK: focus={} stream={} volume={}",
+            focusStream,
+            stream.id,
+            stream.volume
+        );
+        
         originalVolumes_[stream.id] = stream.volume;
 
         backend_.setVolume(stream.id, stream.volume * duckLevel_);

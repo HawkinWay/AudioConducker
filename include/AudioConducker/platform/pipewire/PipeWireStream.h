@@ -34,14 +34,6 @@ public:
     const AudioStream& getAudioStream() const;
 
 private:
-    void updateVolumeFromProps(const spa_pod* param);
-
-    static void on_param(void *data, int seq, int32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
-
-    // void queryVolume();
-    
-    // void handleProps(const spa_pod* param);
-
     static void on_process(void* userdata);
 
     void process();

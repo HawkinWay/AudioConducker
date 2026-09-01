@@ -96,12 +96,10 @@ TEST(AudioConduckerIntegrationTests, integration){
 		monitor.update();
 
 		auto focus = monitor.findStreamByApplication(config.getFocusApplication());
-
-		spdlog::info("Focus Application ID: {}", *focus);
-
+		
 		if(!focus){
 			spdlog::warn("[TEST] Focus application '{}' not found, skipping process()",
-						config.getFocusApplication());
+				config.getFocusApplication());
 		}else{
 			spdlog::info("Focus Application ID: {}", *focus);
 			engine.process(*focus);
@@ -118,8 +116,6 @@ TEST(AudioConduckerIntegrationTests, integration){
 		monitor.update();
 
 		auto focus = monitor.findStreamByApplication(config.getFocusApplication());
-
-		spdlog::info("Focus Application ID: {}", *focus);
 
 		if(!focus){
 			spdlog::warn("[TEST] Focus application '{}' not found, skipping process()",

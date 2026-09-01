@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AudioConducker/audio/IAudioBackend.h"
+#include "AudioConducker/core/Logger.h"
 #include <vector>
 #include <unordered_map>
 

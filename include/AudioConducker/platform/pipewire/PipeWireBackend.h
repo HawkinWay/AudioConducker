@@ -44,8 +44,32 @@ private:
 	struct DestroyProxyData {
     	struct pw_proxy* proxy;
 	};
-
+	
 	static int do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
+	
+	// void updateVolumeFromProps(const spa_pod* param);
+
+    // static void on_param(void *data, int seq, int32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
+
+	struct NodeData {
+		PipeWireBackend* backend;
+		StreamId id;
+		pw_node* node;
+		spa_hook node_listener;
+	};	
+
+	struct QueryVolumeData {
+        PipeWireBackend* self;
+        StreamId id;
+    };
+
+	void queryVolume(StreamId id);
+	
+	static int do_query_volume(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
+	
+	static void onNodeParam(void *data, int seq, uint32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
+	
+	void handleNodeProps(StreamId streamId, uint32_t id, const spa_pod* param);
 
 	void onNodeAdded(StreamId id);
 
@@ -61,6 +85,8 @@ private:
 		
 	std::unordered_map<StreamId, struct pw_node*> nodes_;	// use STL to replace NodeInfo above
 	std::unordered_map<StreamId, std::unique_ptr<PipeWireStream>> monitors_;
+    std::unordered_map<StreamId, float> volumes_;
+	std::unordered_map<StreamId, std::unique_ptr<NodeData>> node_data_;
 	
 	std::unique_ptr<NodeObserver> observer_;
 };
