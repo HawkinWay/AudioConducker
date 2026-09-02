@@ -11,7 +11,7 @@ public:
     float getDuckLevel() const;
 
 private:
-    std::string focusApplication_ = "mpv";
+    std::string focusApplication_ = "Firefox";
 
     float duckLevel_ = 0.2f;
 };

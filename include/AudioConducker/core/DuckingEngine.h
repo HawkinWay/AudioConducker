@@ -4,6 +4,7 @@
 #include "AudioConducker/core/Logger.h"
 #include <vector>
 #include <unordered_map>
+#include <optional>
 
 namespace AudioConducker{
 
@@ -11,7 +12,7 @@ class DuckingEngine{
 public:
     DuckingEngine(AudioBackend& backend, float duckLevel = 0.2f);
 
-    void process(StreamId focusStream);
+    void process(std::optional<StreamId> focusStream);
     
 private:
 	void restore();
@@ -22,8 +23,6 @@ private:
     float duckLevel_;
     std::unordered_map<StreamId, float> originalVolumes_;
     bool isActive_{false};
-
-    StreamId currentFocusStream_;
 };
 
 } // namespace AudioConducker
