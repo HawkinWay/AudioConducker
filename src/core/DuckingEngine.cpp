@@ -4,10 +4,10 @@
 
 namespace AudioConducker{
 
-DuckingEngine::DuckingEngine(AudioBackend& backend, float duckLevel): backend_(backend), duckLevel_(duckLevel){}
+DuckingEngine::DuckingEngine(AudioBackend& backend, float duckLevel): backend_(backend), duckLevel_(duckLevel), currentFocusStream_(0){}
 
 void DuckingEngine::process(StreamId focusStream){
-    std::cout << "DuckingEngine processing...\n";
+    Logger::info("DuckingEngine processing...\n");
     auto streams = backend_.getStreams();
 
     bool focusActive = false;
@@ -17,6 +17,10 @@ void DuckingEngine::process(StreamId focusStream){
             focusActive = stream.isActive;
             break;
         }
+    }
+
+    if(isActive_ && currentFocusStream_ != focusStream){
+        restore();
     }
 
     if(focusActive){
@@ -38,6 +42,8 @@ void DuckingEngine::restore(){
     originalVolumes_.clear();
 
     isActive_ = false;
+
+    currentFocusStream_ = 0;
 }
 
 void DuckingEngine::duck(StreamId focusStream, const std::vector<AudioStream>& streams){

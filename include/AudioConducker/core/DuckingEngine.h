@@ -22,6 +22,8 @@ private:
     float duckLevel_;
     std::unordered_map<StreamId, float> originalVolumes_;
     bool isActive_{false};
+
+    StreamId currentFocusStream_;
 };
 
 } // namespace AudioConducker
