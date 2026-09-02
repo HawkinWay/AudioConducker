@@ -73,6 +73,8 @@ private:
 
 	void onNodeAdded(StreamId id);
 
+	void onNodeRemoved(StreamId id);
+
 	void onActivityChanged(StreamId id, bool active);
 
 private:

@@ -4,9 +4,10 @@
 
 namespace AudioConducker{
 
-NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback): 
+NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback, NodeRemovedCallback removedCallback): 
         registry_(pw_core_get_registry(context.getCore(), PW_VERSION_REGISTRY, 0)),
-        callback_(std::move(callback)){
+        callback_(std::move(callback)),
+        removedCallback_(std::move(removedCallback)){
 
     spa_zero(listener_);
     
@@ -130,9 +131,39 @@ void NodeObserver::registry_event_global(
     
 }
 
+void NodeObserver::registry_event_global_remove(void *data, uint32_t id){
+    auto* observer = static_cast<NodeObserver*>(data);
+
+    spdlog::info("Node removed: {}", id);
+
+    observer->streams_.erase(
+        std::remove_if(
+            observer->streams_.begin(),
+            observer->streams_.end(),
+            [id](const AudioStream& audioStream){
+                return audioStream.id == id;
+            }
+        ),
+        observer->streams_.end()
+    );
+
+    // C++ 20
+    // std::erase_if(
+    //     observer->streams_, 
+    //     [id](const AudioStream& audioStream){
+    //         return audioStream.id == id;
+    //     }
+    // );
+
+    if(observer->removedCallback_ != nullptr){
+        observer->removedCallback_(id);
+    }
+}
+
 const struct pw_registry_events NodeObserver::registry_events_ = {
-            .version = PW_VERSION_REGISTRY_EVENTS,
-            .global = registry_event_global,
+        .version = PW_VERSION_REGISTRY_EVENTS,
+        .global = registry_event_global,
+        .global_remove = registry_event_global_remove,
 };
 
 } // namespace AudioConducker

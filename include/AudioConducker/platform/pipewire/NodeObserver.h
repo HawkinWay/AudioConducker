@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AudioConducker/core/Logger.h"
 #include "AudioConducker/audio/AudioStream.h"
 #include "PipeWireContext.h"
 #include <pipewire/pipewire.h>
@@ -14,8 +15,9 @@ namespace AudioConducker{
 class NodeObserver{
 public:
 	using NodeCallback = std::function<void(StreamId)>;
+	using NodeRemovedCallback = std::function<void(StreamId)>;
 
-	NodeObserver(PipeWireContext& context, NodeCallback callback);
+	NodeObserver(PipeWireContext& context, NodeCallback callback, NodeRemovedCallback removedCallback);
 	
 	~NodeObserver();
 
@@ -37,6 +39,8 @@ private:
         const struct spa_dict *props
 	);
 
+	static void registry_event_global_remove(void *data, uint32_t id);
+
 	static const struct pw_registry_events registry_events_;	// contains the events we want to listen to.
 
 	struct pw_registry* registry_;
@@ -45,6 +49,7 @@ private:
 	std::vector<AudioStream> streams_;
 
 	NodeCallback callback_;
+	NodeRemovedCallback removedCallback_;
 };
 
 } // namespace AudioConducker

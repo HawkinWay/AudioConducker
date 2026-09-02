@@ -3,7 +3,11 @@
 namespace AudioConducker{
 
 PipeWireBackend::PipeWireBackend(PipeWireContext& context): context_(context){
-    observer_ = std::make_unique<NodeObserver>(context, [this](StreamId id){ onNodeAdded(id); });
+    observer_ = std::make_unique<NodeObserver>(
+        context, 
+        [this](StreamId id){ onNodeAdded(id); },
+        [this](StreamId id){ onNodeRemoved(id); } 
+    );
 }
 
 PipeWireBackend::~PipeWireBackend(){
@@ -219,8 +223,9 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
             continue;
         }
 
-        const float* volumes = static_cast<const float*>(SPA_POD_BODY(&array->body));
-        const uint32_t count = array->body.child.size / sizeof(float);
+        const float* volumes = static_cast<const float*>(SPA_POD_ARRAY_VALUES(array));
+        // const uint32_t count = array->body.child.size / sizeof(float);
+        const uint32_t count = SPA_POD_ARRAY_N_VALUES(array);
 
         if(count == 0)  continue;
 
@@ -306,6 +311,25 @@ void PipeWireBackend::onNodeAdded(StreamId id){
     monitors_[id] = std::move(monitor);
 
     spdlog::info("Monitoring node {}", id);
+}
+
+void PipeWireBackend::onNodeRemoved(StreamId id){
+    spdlog::info("Removing node {}", id);
+
+    auto it = nodes_.find(id);
+    if(it != nodes_.end()){
+        struct DestroyProxyData data = {
+            .proxy = reinterpret_cast<pw_proxy*>(it->second),
+        };
+
+        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
+        
+        nodes_.erase(id);
+    }
+
+    monitors_.erase(id);
+    volumes_.erase(id);
+    node_data_.erase(id);
 }
 
 void PipeWireBackend::onActivityChanged(StreamId id, bool active){
