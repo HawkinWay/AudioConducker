@@ -98,8 +98,10 @@ To sum up, the problem is that roundtrip() makes the consturctor re-enter the su
 #2
 PipeWire: impl_ext_end_proxy called from wrong context
 
+Cause
 in test_main.cpp, pw_main_loop_run in a standalone thread. This means every event callback like NodeObserver::registry_event_global is executing in this thread. But some functions will call low-level Proxy operation like PipeWireBackend::setVolume, this will use pw_node_set_param, which is not thread-safe, may lead to error context or undefined behavior.
 
+Solution
 To solve this thread (or context) problem, we shouldn't call these APIs like pw_proxy_destroy, pw_node_set_param directly. We should encapsulate them as events, and then send them to PipeWire's main loop to execute. So we use pw_loop_invoke to achieve safe cross-thread usage.
 
 
@@ -109,7 +111,12 @@ To solve this thread (or context) problem, we shouldn't call these APIs like pw_
 #3
 over-restore
 
+Cause
 in PipeWireBackend, use Asynch-method queryVolume() to achieve the real volume of system from pipewire instead of customize 1.f
+
+Solution
+queryVolume() -> do_query_volume -> pw_node_enum_params
+onNodeAdded -> pw_node_events{ .param = onNodeParam } -> onNodeParam ->  handleNodeProps() -> volumes[streamId] = average
 
 
 
@@ -118,6 +125,22 @@ in PipeWireBackend, use Asynch-method queryVolume() to achieve the real volume o
 
 #4
 restore() wasn't being called
+When Firefox stopped playing, sometimes VLC remained ducked.
+
+Cause
+in test_main, engine.process(*focus); When Firefox disappeared, focus became empty, and the code effectively did:
+        if(!focus) {
+                // do nothing
+        }
+Therefore DuckingEngine::restore() was never reached.
+
+Solution
+change the parameter of void DuckingEngine::process, from (StreamId id) to (std::optional<StreamId> focusStream)
+and always call engine.process(focus); in test_main. Then in void DuckingEngine::process(std::optional<StreamId> focus)
+        if(!focus) {
+                restore();
+                return;
+        }
 
 
 
@@ -128,6 +151,17 @@ restore() wasn't being called
 channenl-volume array wasn't parsed correctly;
 Node 80 volume = 9.1851e-41
 
+Cause
+The code calculated the array element count incorrectly:
+        const uint32_t count = array->body.child.size / sizeof(float);
+child.size represents the size of one element, not the number of elements in the array.
+
+Solution
+Use the SPA-provided array macros:
+        const float* volumes = static_cast<const float*>(SPA_POD_ARRAY_VALUES(array));  // actual array data
+        const uint32_t count = SPA_POD_ARRAY_N_VALUES(array);   // number of elements
+
+
 ===========================================================================================================
 
 
@@ -136,8 +170,19 @@ node-changing breaks stream lifecycle
 pause then play, the same firefox tag creates different nodes
 
 Cause
+PipeWire node IDs are not permanent application IDs. When Firefox's audio stream disappeared, PipeWire removed the old node.
+When Firefox started producing audio again, PipeWire created a new node. But NodeObserver only handled:
+.global = registry_event_global  and had no:  .global_remove
+So the observer was effectively doing:
+        Node appears → ADD
+        Node disappears → ????
+        New node appears → ADD
+instead of:
+        Node appears → ADD
+        Node disappears → REMOVE
 
-PipeWire node IDs are not permanent application IDs.
 
-When Firefox's audio stream disappeared, PipeWire removed the old node.
-
+Solution
+implement global_remove in NodeObserver.
+When PipeWire removes a node: observer->streams_.erase(...); and notify the backend: removedCallback_(id);
+Then PipeWireBackend::onNodeRemoved() cleans up: nodes_, monitors_, node_data_, volumes_ and destroys the corresponding PipeWire proxy.
