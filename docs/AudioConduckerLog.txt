@@ -1,0 +1,188 @@
+#1
+> gdb --batch -ex "set pagination off" -ex "run" -ex "bt full" --args ./build/AudioConducker
+
+
+
+(here omit AudioConducker output like ----Node found----, streams now = 1 etc.)
+
+
+
+Thread 1 "AudioConducker" received signal SIGSEGV, Segmentation fault.
+0x00005555555704aa in AudioConducker::NodeObserver::getRegistry (this=0x0) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/NodeObserver.cpp:38
+38	    return registry_;
+#0  0x00005555555704aa in AudioConducker::NodeObserver::getRegistry (this=0x0) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/NodeObserver.cpp:38
+No locals.
+#1  0x000055555556556a in AudioConducker::PipeWireBackend::onNodeAdded (this=0x7fffffffd970, id=86) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/PipeWireBackend.cpp:48
+        node = 0x55555564d450
+#2  0x000055555556501b in operator() (__closure=0x55555568be20, id=86) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/PipeWireBackend.cpp:6
+        this = 0x7fffffffd970
+#3  0x0000555555565b76 in std::__invoke_impl<void, AudioConducker::PipeWireBackend::PipeWireBackend(AudioConducker::PipeWireContext&)::<lambda(AudioConducker::StreamId)>&, unsigned int>(std::__invoke_other, struct {...} &) (__f=...) at /usr/include/c++/15/bits/invoke.h:63
+No locals.
+#4  0x0000555555565a64 in std::__invoke_r<void, AudioConducker::PipeWireBackend::PipeWireBackend(AudioConducker::PipeWireContext&)::<lambda(AudioConducker::StreamId)>&, unsigned int>(struct {...} &) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113
+No locals.
+#5  0x0000555555565927 in std::_Function_handler<void(unsigned int), AudioConducker::PipeWireBackend::PipeWireBackend(AudioConducker::PipeWireContext&)::<lambda(AudioConducker::StreamId)> >::_M_invoke(const std::_Any_data &, unsigned int &&) (__functor=..., __args#0=@0x7fffffffd064: 86) at /usr/include/c++/15/bits/std_function.h:292
+No locals.
+#6  0x0000555555570ea2 in std::function<void(unsigned int)>::operator() (this=0x55555568be20, __args#0=86) at /usr/include/c++/15/bits/std_function.h:593
+No locals.
+#7  0x000055555557093c in AudioConducker::NodeObserver::registry_event_global (data=0x55555568bdd0, id=86, permissions=456, type=0x555555697c78 "PipeWire:Interface:Node", version=3, props=0x7fffffffd260) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/NodeObserver.cpp:114
+        app = 0x555555697d88 "Firefox"
+        media_class = 0x555555697dd8 "Stream/Output/Audio"
+        stream = {id = 86, name = "Firefox", application = "Firefox", mediaClass = "Stream/Output/Audio", volume = 1, isActive = false, controllable = false}
+        name = 0x555555697db0 "Firefox"
+        isApplication = true
+        observer = 0x55555568bdd0
+#8  0x00007ffff6ecebee in ?? () from /usr/lib/x86_64-linux-gnu/pipewire-0.3/libpipewire-module-protocol-native.so
+No symbol table info available.
+#9  0x00007ffff6ebd13c in ?? () from /usr/lib/x86_64-linux-gnu/pipewire-0.3/libpipewire-module-protocol-native.so
+No symbol table info available.
+#10 0x00007ffff6ebd7f8 in ?? () from /usr/lib/x86_64-linux-gnu/pipewire-0.3/libpipewire-module-protocol-native.so
+No symbol table info available.
+#11 0x00007ffff7a86a96 in ?? () from /usr/lib/x86_64-linux-gnu/spa-0.2/support/libspa-support.so
+No symbol table info available.
+#12 0x00007ffff7f28311 in pw_main_loop_run () from /usr/lib/x86_64-linux-gnu/libpipewire-0.3.so.0
+No symbol table info available.
+#13 0x0000555555562da3 in AudioConducker::PipeWireContext::roundtrip (core=0x555555678b50, mainLoop=0x555555654fc0) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/PipeWireContext.cpp:65
+        core_events = {version = 1, info = 0x0, done = 0x555555562e0a <AudioConducker::PipeWireContext::on_core_done(void*, unsigned int, int)>, ping = 0x0, error = 0x0, remove_id = 0x0, bound_id = 0x0, add_mem = 0x0, remove_mem = 0x0, bound_props = 0x0}
+        d = {pending = 1073741827, loop = 0x555555654fc0}
+        core_listener = {link = {next = 0x555555678ba8, prev = 0x555555678bf0}, cb = {funcs = 0x555555636680 <AudioConducker::PipeWireContext::roundtrip(pw_core*, pw_main_loop*)::core_events>, data = 0x7fffffffd700}, removed = 0x0, priv = 0x0}
+        err = 32767
+#14 0x00005555555702f5 in AudioConducker::NodeObserver::NodeObserver (this=0x55555568bdd0, context=..., callback=...) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/NodeObserver.cpp:14
+No locals.
+#15 0x000055555556578f in std::make_unique<AudioConducker::NodeObserver, AudioConducker::PipeWireContext&, AudioConducker::PipeWireBackend::PipeWireBackend(AudioConducker::PipeWireContext&)::<lambda(AudioConducker::StreamId)> >(void) () at /usr/include/c++/15/bits/unique_ptr.h:1084
+No locals.
+#16 0x00005555555650b7 in AudioConducker::PipeWireBackend::PipeWireBackend (this=0x7fffffffd970, context=...) at /home/shovy/Documents/AudioConducker/src/platform/pipewire/PipeWireBackend.cpp:6
+No locals.
+#17 0x0000555555560370 in main () at /home/shovy/Documents/AudioConducker/src/main.cpp:49
+        context = {loop_ = 0x555555654fc0, context_ = 0x555555655780, core_ = 0x555555678b50}
+        backend = {<AudioConducker::AudioBackend> = {_vptr.AudioBackend = 0x5555556366e0 <vtable for AudioConducker::PipeWireBackend+16>}, context_ = @0x7fffffffd910, nodes_ = std::unordered_map with 0 elements, monitors_ = std::unordered_map with 0 elements, observer_ = std::unique_ptr<AudioConducker::NodeObserver> = {get() = 0x0}}
+        streams = std::vector of length 0, capacity 0
+        loop = {_M_id = {_M_thread = 0}}
+
+
+
+----------------------------------------------------------------------------------------
+
+key lines:
+
+#0 NodeObserver::getRegistry(this=0x0)
+#1 PipeWireBackend::onNodeAdded(this=..., id=86)
+#2 lambda in PipeWireBackend constructor
+#7 NodeObserver::registry_event_global(...)
+#13 PipeWireContext::roundtrip(...)
+#14 NodeObserver::NodeObserver(...)
+
+backend = {
+    ...
+    observer_ = std::unique_ptr<NodeObserver> = {get() = 0x0}
+}
+
+
+represents:
+
+the PipeWireBackend constructor doing std::make_unique<NodeObserver>(...), this calls NodeObserver's constructor: context.roundtrip(...).
+
+This roundtrip starts processing PipeWire events before make_unique has finished
+
+roundtrip()-->NodeObserver::registry_event_global()-->calls callback_(86), but callback_(86) invokes PipeWireBackend::onNodeAdded(86). observer_ has not yet been assigned the newly constructed NodeObserver.
+
+Therefore, observer_->getRegistry() is effectively nullptr->getRegistry()
+
+so NodeObserver::getRegistry(this=0x0)
+
+To sum up, the problem is that roundtrip() makes the consturctor re-enter the surrounding PipeWireBackend before the NodeObserver has been assigned to observer_.
+
+
+========================================================================================================
+
+
+#2
+PipeWire: impl_ext_end_proxy called from wrong context
+
+Cause
+in test_main.cpp, pw_main_loop_run in a standalone thread. This means every event callback like NodeObserver::registry_event_global is executing in this thread. But some functions will call low-level Proxy operation like PipeWireBackend::setVolume, this will use pw_node_set_param, which is not thread-safe, may lead to error context or undefined behavior.
+
+Solution
+To solve this thread (or context) problem, we shouldn't call these APIs like pw_proxy_destroy, pw_node_set_param directly. We should encapsulate them as events, and then send them to PipeWire's main loop to execute. So we use pw_loop_invoke to achieve safe cross-thread usage.
+
+
+==========================================================================================================
+
+
+#3
+over-restore
+
+Cause
+in PipeWireBackend, use Asynch-method queryVolume() to achieve the real volume of system from pipewire instead of customize 1.f
+
+Solution
+queryVolume() -> do_query_volume -> pw_node_enum_params
+onNodeAdded -> pw_node_events{ .param = onNodeParam } -> onNodeParam ->  handleNodeProps() -> volumes[streamId] = average
+
+
+
+==========================================================================================================
+
+
+#4
+restore() wasn't being called
+When Firefox stopped playing, sometimes VLC remained ducked.
+
+Cause
+in test_main, engine.process(*focus); When Firefox disappeared, focus became empty, and the code effectively did:
+        if(!focus) {
+                // do nothing
+        }
+Therefore DuckingEngine::restore() was never reached.
+
+Solution
+change the parameter of void DuckingEngine::process, from (StreamId id) to (std::optional<StreamId> focusStream)
+and always call engine.process(focus); in test_main. Then in void DuckingEngine::process(std::optional<StreamId> focus)
+        if(!focus) {
+                restore();
+                return;
+        }
+
+
+
+===========================================================================================================
+
+
+#5
+channenl-volume array wasn't parsed correctly;
+Node 80 volume = 9.1851e-41
+
+Cause
+The code calculated the array element count incorrectly:
+        const uint32_t count = array->body.child.size / sizeof(float);
+child.size represents the size of one element, not the number of elements in the array.
+
+Solution
+Use the SPA-provided array macros:
+        const float* volumes = static_cast<const float*>(SPA_POD_ARRAY_VALUES(array));  // actual array data
+        const uint32_t count = SPA_POD_ARRAY_N_VALUES(array);   // number of elements
+
+
+===========================================================================================================
+
+
+#6
+node-changing breaks stream lifecycle
+pause then play, the same firefox tag creates different nodes
+
+Cause
+PipeWire node IDs are not permanent application IDs. When Firefox's audio stream disappeared, PipeWire removed the old node.
+When Firefox started producing audio again, PipeWire created a new node. But NodeObserver only handled:
+.global = registry_event_global  and had no:  .global_remove
+So the observer was effectively doing:
+        Node appears → ADD
+        Node disappears → ????
+        New node appears → ADD
+instead of:
+        Node appears → ADD
+        Node disappears → REMOVE
+
+
+Solution
+implement global_remove in NodeObserver.
+When PipeWire removes a node: observer->streams_.erase(...); and notify the backend: removedCallback_(id);
+Then PipeWireBackend::onNodeRemoved() cleans up: nodes_, monitors_, node_data_, volumes_ and destroys the corresponding PipeWire proxy.

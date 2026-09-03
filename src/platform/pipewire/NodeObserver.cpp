@@ -4,29 +4,53 @@
 
 namespace AudioConducker{
 
-NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback): 
+NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback, NodeRemovedCallback removedCallback): 
         registry_(pw_core_get_registry(context.getCore(), PW_VERSION_REGISTRY, 0)),
-        callback_(std::move(callback)){
+        callback_(std::move(callback)),
+        removedCallback_(std::move(removedCallback)){
 
     spa_zero(listener_);
     
     pw_registry_add_listener(registry_, &listener_, &registry_events_, this);
     // context.roundtrip(context.getCore(), context.getMainLoop());
 
-    std::cout << "\nPipewire initialized.\n"; 
+    std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
 }
 
 NodeObserver::~NodeObserver(){
-    pw_proxy_destroy(reinterpret_cast<pw_proxy*>(registry_));
+    if(registry_){
+        pw_proxy_destroy(reinterpret_cast<pw_proxy*>(registry_));
+        registry_ = nullptr;
+    }
 }
 
 const std::vector<AudioStream>& NodeObserver::getStreams() const{
 	return streams_;
 }
 
+std::optional<std::reference_wrapper<AudioStream>> NodeObserver::getStreamById(StreamId id){
+    for(auto& stream : streams_){
+        if(stream.id == id){
+            return stream;
+        }
+    }
+
+    return std::nullopt;
+}
+
 pw_registry* NodeObserver::getRegistry() const{
     return registry_;
 }
+
+void NodeObserver::setActive(StreamId id, bool active){
+    for(auto& stream : streams_){
+        if(stream.id == id){
+            stream.isActive = active;
+            return;
+        }
+    }
+}
+
 
 // void NodeObserver::setVolume(StreamId id, float volume){
 //     auto it = nodes_.find(id);
@@ -98,6 +122,7 @@ void NodeObserver::registry_event_global(
 	    // std::cout << "media name: " << (media_name ? media_name : "") << '\n'; 
 
         observer->streams_.push_back(stream);
+        std::cout << "streams now = " << observer->streams_.size() << '\n';
         
         if(observer->callback_ != nullptr){
             observer->callback_(id);
@@ -106,9 +131,39 @@ void NodeObserver::registry_event_global(
     
 }
 
+void NodeObserver::registry_event_global_remove(void *data, uint32_t id){
+    auto* observer = static_cast<NodeObserver*>(data);
+
+    spdlog::info("Node removed: {}", id);
+
+    observer->streams_.erase(
+        std::remove_if(
+            observer->streams_.begin(),
+            observer->streams_.end(),
+            [id](const AudioStream& audioStream){
+                return audioStream.id == id;
+            }
+        ),
+        observer->streams_.end()
+    );
+
+    // C++ 20
+    // std::erase_if(
+    //     observer->streams_, 
+    //     [id](const AudioStream& audioStream){
+    //         return audioStream.id == id;
+    //     }
+    // );
+
+    if(observer->removedCallback_ != nullptr){
+        observer->removedCallback_(id);
+    }
+}
+
 const struct pw_registry_events NodeObserver::registry_events_ = {
-            .version = PW_VERSION_REGISTRY_EVENTS,
-            .global = registry_event_global,
+        .version = PW_VERSION_REGISTRY_EVENTS,
+        .global = registry_event_global,
+        .global_remove = registry_event_global_remove,
 };
 
 } // namespace AudioConducker

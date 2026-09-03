@@ -14,7 +14,7 @@ std::vector<AudioStream> AudioMonitor::getActiveStreams() const{
 
 std::optional<StreamId> AudioMonitor::findStreamByApplication(const std::string& application) const{
     for(const auto& stream : streams_){
-        if(stream.application == application){
+        if(stream.application == application && stream.isActive && stream.controllable){
             return stream.id;
         }
     }

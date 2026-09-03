@@ -4,7 +4,8 @@
 
 namespace AudioConducker{
 
-PipeWireStream::PipeWireStream(PipeWireContext& context, AudioStream& audioStream): context_(context), audioStream_(audioStream){
+PipeWireStream::PipeWireStream(PipeWireContext& context, StreamId id, ActivityCallback activityCallback): 
+                                context_(context), id_(id), activityCallback_(std::move(activityCallback)){
     struct pw_properties* props = pw_properties_new(
                                     PW_KEY_MEDIA_TYPE, "Audio",
                                     PW_KEY_MEDIA_CATEGORY, "Capture",
@@ -27,6 +28,7 @@ PipeWireStream::PipeWireStream(PipeWireContext& context, AudioStream& audioStrea
 PipeWireStream::~PipeWireStream(){
     if(stream_){
         pw_stream_destroy(stream_);
+        stream_ = nullptr;
     }
 }
 
@@ -47,17 +49,28 @@ void PipeWireStream::connect(StreamId id){
         stream_, 
         PW_DIRECTION_INPUT, 
         id, 
-        static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | 
-        PW_STREAM_FLAG_MAP_BUFFERS |
-        PW_STREAM_FLAG_RT_PROCESS),
+        static_cast<pw_stream_flags>(
+            PW_STREAM_FLAG_AUTOCONNECT | 
+            PW_STREAM_FLAG_MAP_BUFFERS |
+            PW_STREAM_FLAG_RT_PROCESS
+        ),
         params,
         n_params
     );
+
+    std::cout << "[PipeWireStream] connect result = " << result << '\n';
+    std::cout << "[PipeWireStream] stream state = " << pw_stream_state_as_string(pw_stream_get_state(stream_, nullptr)) << '\n';
 
     if(result < 0){
         std::cerr << "Failed to connect stream: " << result << '\n';
     }
 }
+
+
+const AudioStream& PipeWireStream::getAudioStream() const{
+    return audioStream_;
+}
+
 
 void PipeWireStream::on_process(void* userdata){
     auto pwStream = static_cast<PipeWireStream*>(userdata);
@@ -66,6 +79,15 @@ void PipeWireStream::on_process(void* userdata){
 }
 
 void PipeWireStream::process(){
+    static uint64_t processThreadCount = 0;
+    processThreadCount++;
+    if(processThreadCount % 100 == 0){
+        spdlog::info(
+            "process() thread {}",
+            std::hash<std::thread::id>{}(std::this_thread::get_id())
+        );
+    }
+
     struct pw_buffer* pw_buff;
     struct spa_buffer* spa_buff;
     float *samples;
@@ -83,15 +105,43 @@ void PipeWireStream::process(){
     n_channels = format_.info.raw.channels;
     n_samples = spa_buff->datas[0].chunk->size / sizeof(float);
 
-    static int counter = 0;
+    bool active = detector_.process(samples, n_samples);
+    // spdlog::info(
+    //     "PipeWireStream {}: this={}, rms={}, active={}",
+    //     audioStream_.id,
+    //     static_cast<const void*>(this),
+    //     detector_.getRMS(samples, n_samples),
+    //     active
+    // );
+    if(active != lastActive_){
+        lastActive_ = active;
+        
+        if(activityCallback_){
+            activityCallback_(id_, active);
+        }
+    }
 
-    if(counter++ % 50 == 0){
-        std::cout << "\nRecieved samples: " << n_samples << '\n';
-        bool active = detector_.process(samples, n_samples);
-        std::cout << "Active: " << (active ? "true" : "false") << '\n';
+    
+    static uint64_t processCount = 0;
+    processCount++;
+    if (processCount % 100 == 0) {
+        spdlog::debug(
+            "PipeWireStream {} processed {} buffers, rms = {} active = {}",
+            id_,
+            processCount,
+            detector_.getRMS(samples, n_samples),
+            (active ? "yes" : "no")
+        );
     }
 
     pw_stream_queue_buffer(stream_, pw_buff);
+}
+
+void PipeWireStream::on_state_changed(void *data, pw_stream_state old, pw_stream_state state, const char *error){
+    std::cout << "Stream state: " << pw_stream_state_as_string(state) << '\n';
+
+    if (error)
+        std::cerr << "Error: " << error << '\n';
 }
 
 
@@ -117,6 +167,7 @@ void PipeWireStream::on_stream_param_changed(void *_data, uint32_t id, const str
 
 const struct pw_stream_events PipeWireStream::stream_events_ = {
     .version = PW_VERSION_STREAM_EVENTS,
+    .state_changed = on_state_changed,
     .param_changed = on_stream_param_changed,
     .process = on_process,
 };
