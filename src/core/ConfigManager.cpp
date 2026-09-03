@@ -6,8 +6,16 @@ std::string ConfigManager::getFocusApplication() const{
     return focusApplication_;
 }
 
-float ConfigManager::getDuckLevel() const{
-    return duckLevel_;
+float ConfigManager::getDuckRatio() const{
+    return duckRatio_;
+}
+
+void ConfigManager::setFocusApplication(const std::string& application){
+    focusApplication_ = application;
+}
+
+void ConfigManager::setDuckRatio(float level){
+    duckRatio_ = level;
 }
 
 } // namespace AudioConducker

@@ -31,6 +31,8 @@ option(BUILD_TESTS "Build tests" OFF)
 add_library(AudioConduckerCore
     src/audio/ActivityDetector.cpp
 
+    src/cli/CLI.cpp
+
     src/core/Logger.cpp
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp

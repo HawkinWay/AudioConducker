@@ -1,3 +1,4 @@
+#include "AudioConducker/cli/CLI.h"
 #include "AudioConducker/audio/ActivityDetector.h"
 #include "AudioConducker/core/DuckingEngine.h"
 #include "AudioConducker/core/ConfigManager.h"
@@ -7,88 +8,50 @@
 #include "AudioConducker/platform/pipewire/PipeWireContext.h"
 #include "AudioConducker/platform/pipewire/PipeWireBackend.h"
 #include "AudioConducker/platform/pipewire/PipeWireStream.h"
+
 #include <iostream>
 #include <chrono>
 #include <thread>
 
 using namespace AudioConducker;
 
-int main()
+int main(int argc, char* argv[])
 {
-    // test logger
-    AudioConducker::Logger::init();
-
-    AudioConducker::Logger::info("Application started");
-
-    AudioConducker::Logger::debug("Debug message");
-
-    AudioConducker::Logger::error("Example error\n");
-
-    //test pipewire
     try{
-#if 0
-        AudioConducker::PipeWireContext context;
-        std::cout << "Pipewire context initialized.\n";
+        CLI cli(argc, argv);
 
-        AudioConducker::AudioStream firefox{
-            .id = 114,
-            .name = "Firefox",
-        };
+        ConfigManager config;
 
-        AudioConducker::PipeWireStream stream(context, firefox);
+        if(!cli.parse(config)){
+            return 0;
+        }
 
-        stream.connect(114);
+        PipeWireContext context;
+        PipeWireBackend backend(context);
 
-        
-        AudioConducker::PipeWireBackend backend(context);
-        std::cout << "\nStart looping... ...\n";
+        AudioMonitor monitor(backend);
 
-        pw_main_loop_run(context.getMainLoop());
-        
-        // backend.setVolume(84, 0.2f);
-#endif
-        AudioConducker::PipeWireContext context;
-        AudioConducker::PipeWireBackend backend(context);
-        
-        Logger::info("[TEST]Initializing backend...");
-        
+        DuckingEngine engine(backend, config.getDuckRatio());
+
         backend.initialize();
+        std::thread loop(
+            [&](){
+                pw_main_loop_run(context.getMainLoop());
+            }
+        );
 
-        auto streams = backend.getStreams();
-        spdlog::info("[TEST] Discovered {} streams", streams.size());
-        
-        if (streams.empty()) {
-            Logger::error("Integration test failed: no streams found");
-            return 1;
+        while(true){
+            monitor.update();
+
+            auto focus = monitor.findStreamByApplication(config.getFocusApplication());
+            
+            engine.process(focus);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
-
-        Logger::info("[TEST] for-loop:");
-        for(const auto& stream : streams){
-            spdlog::info(
-                "Stream: id={} application={} name={} active={} volume={}",
-                stream.id,
-                stream.application,
-                stream.name,
-                (stream.isActive ? "yes" : "no"),
-                stream.volume
-            );
-        }
-
-        std::thread loop([&](){ pw_main_loop_run(context.getMainLoop()); });
-
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        
-        pw_main_loop_quit(context.getMainLoop());
-        
-        loop.join();
-
-        Logger::info("[PASS] PipeWire backend integration test");
-
     }
     catch(const std::exception& e){
-        std::cerr << e.what() << '\n';
+        std::cerr << "Error: " << e.what() << '\n';
+        return 1;
     }
-
-
-    return 0;
 }
