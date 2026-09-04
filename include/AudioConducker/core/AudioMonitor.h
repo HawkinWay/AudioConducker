@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AudioConducker/core/Logger.h"
 #include "AudioConducker/audio/IAudioBackend.h"
 #include <string>
 #include <optional>

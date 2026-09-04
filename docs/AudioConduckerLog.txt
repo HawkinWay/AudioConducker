@@ -186,3 +186,79 @@ Solution
 implement global_remove in NodeObserver.
 When PipeWire removes a node: observer->streams_.erase(...); and notify the backend: removedCallback_(id);
 Then PipeWireBackend::onNodeRemoved() cleans up: nodes_, monitors_, node_data_, volumes_ and destroys the corresponding PipeWire proxy.
+
+
+
+===========================================================================================================
+
+
+#7
+in NodeObserver::registry_event_global: 
+
+	const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
+
+can't be parse correctly, then leads to:
+
+        ---- Node found ----
+        id: 111
+        object.serial = 2601
+        factory.id = 7
+        client.id = 68
+        client.api = pipewire-pulse
+        application.name = Firefox
+        node.name = Firefox
+        media.class = Stream/Output/Audio
+        name: Firefox
+        application: Firefox
+        media class: Stream/Output/Audio
+------->media name: <NOT PRESENT>         
+        node description: 
+        streams now = 6
+
+but in terminal use pw-cli info 111:
+
+                id: 111
+                permissions: rwxm-
+                type: PipeWire:Interface:Node/3
+        *	input ports: 0/0
+        *	output ports: 2/129
+        *	state: "idle"
+        *	properties:
+        *		client.api = "pipewire-pulse"
+        *		pulse.server.type = "unix"
+        *		pipewire.snap.id = "firefox"
+        *		pipewire.snap.audio.playback = "true"
+        *		pipewire.snap.audio.record = "true"
+        *		application.name = "Firefox"
+        *		application.process.id = "8169"
+        *		application.process.user = "shovy"
+        *		application.process.host = "shovy-Legion-R7000-APH9"
+        *		application.process.binary = "firefox"
+        *		application.language = "en_US.UTF-8"
+        *		window.x11.display = ":0"
+        *		application.process.machine-id = "ab8800beb365495fbe8b11da1a67fbaa"
+------->*		media.name = "网易云音乐"
+
+
+Cause
+The props passed to registry_event_global() are the global object's initial registry properties.
+PipeWire initially gives your registry listener something like:
+
+        object.serial
+        factory.id
+        client.id
+        client.api
+        application.name
+        node.name
+        media.class
+
+But the full Node properties (pw-cli info 111) contain additional properties: 
+
+        media.name
+        application.process.id
+        application.process.binary
+        ...
+
+
+Solution
+

@@ -43,7 +43,7 @@ bool CLI::parse(ConfigManager& config) const{
             config.setDuckRatio(ratio);
         }
         else{
-            throw std::runtime_error("Unknown argument: " + arg + " Use -h or --help to find help");
+            throw std::runtime_error("Unknown argument: " + arg + " \nUse -h or --help to find help");
         }
     }
 

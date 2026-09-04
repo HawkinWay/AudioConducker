@@ -24,17 +24,24 @@ void PipeWireBackend::initialize(){
 }
 
 std::vector<AudioStream> PipeWireBackend::getStreams(){
-    auto streams = observer_->getStreams();
+    std::vector<AudioStream> result;
 
-    for(auto& stream : streams){
-        auto it = volumes_.find(stream.id);
+    // auto streams = observer_->getStreams();
+    result.reserve(streams_.size());
 
-        if(it != volumes_.end()){
-            stream.volume = it->second;
-        }
+    // for(auto& stream : streams){
+    //     auto it = volumes_.find(stream.id);
+
+    //     if(it != volumes_.end()){
+    //         stream.volume = it->second;
+    //     }
+    // }
+    for(const auto& stream : streams_){
+        result.push_back(stream.second);
     }
 
-    return streams;
+    // return stream;
+    return result;
 }
 
 void PipeWireBackend::setVolume(StreamId id, float volume){
@@ -199,6 +206,33 @@ void PipeWireBackend::onNodeParam(void *data, int seq, uint32_t id, uint32_t ind
     nodeData->backend->handleNodeProps(nodeData->id, id, param);
 }
 
+void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
+    auto* nodeData = static_cast<NodeData*>(data);
+
+    auto* backend = nodeData->backend;
+
+    if(!info || !info->props){
+        return;
+    }
+
+    const auto* props = info->props;
+
+
+    if(const char* node_name = spa_dict_lookup(props, PW_KEY_NODE_NAME))        nodeData->nodeName = node_name;
+    if(const char* application = spa_dict_lookup(props, PW_KEY_APP_NAME))       nodeData->application = application;
+    if(const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS))    nodeData->mediaClass = media_class;
+    if( const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME))     nodeData->mediaName = media_name;
+
+    auto& stream = backend->streams_[nodeData->id];
+    
+    stream.id = nodeData->id;
+    stream.name = nodeData->nodeName;
+    stream.application = nodeData->application;
+    stream.mediaClass = nodeData->mediaClass;
+    stream.mediaName = nodeData->mediaName;
+}
+
+
 void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_pod* param){
      if (!spa_pod_is_object(param)) {
         return;
@@ -271,9 +305,11 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     nodeData->backend = this;
     nodeData->id = id;
+    nodeData->node = node;
 
     static const pw_node_events node_events = {
         .version = PW_VERSION_NODE_EVENTS,
+        .info = onNodeInfo,
         .param = onNodeParam,
     };
 
@@ -291,12 +327,12 @@ void PipeWireBackend::onNodeAdded(StreamId id){
     // 查询真实 volume
     queryVolume(id);
 
-    auto stream = observer_->getStreamById(id);
+    // auto stream = observer_->getStreamById(id);
 
-    if(!stream){
-        spdlog::error("Stream {} not found", id);
-        return;
-    }
+    // if(!stream){
+    //     spdlog::error("Stream {} not found", id);
+    //     return;
+    // }
 
     auto monitor = std::make_unique<PipeWireStream>(
         context_,
@@ -330,10 +366,15 @@ void PipeWireBackend::onNodeRemoved(StreamId id){
     monitors_.erase(id);
     volumes_.erase(id);
     node_data_.erase(id);
+    streams_.erase(id);
 }
 
 void PipeWireBackend::onActivityChanged(StreamId id, bool active){
-    observer_->setActive(id, active);
+    auto it = streams_.find(id);
+    if(it == streams_.end())    return;
+
+    //observer_->setActive(id, active);
+    it->second.isActive = active;
 }
 
 } // namespace AudioConducker

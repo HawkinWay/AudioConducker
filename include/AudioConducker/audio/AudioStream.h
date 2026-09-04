@@ -12,7 +12,7 @@ struct AudioStream{
     std::string name;
     std::string application;
     std::string mediaClass;
-    // std::string mediaName;
+    std::string mediaName;
     float volume = 1.f;
     uint32_t channelCount = 2;
     bool isActive = false;

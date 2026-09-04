@@ -1,5 +1,7 @@
 #include "AudioConducker/core/AudioMonitor.h"
 
+#include <iostream>
+
 namespace AudioConducker{
 
 AudioMonitor::AudioMonitor(AudioBackend& backend) : backend_(backend){}
