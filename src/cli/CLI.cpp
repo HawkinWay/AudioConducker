@@ -32,15 +32,15 @@ bool CLI::parse(ConfigManager& config) const{
                 throw std::runtime_error("--duck requires a percentage");
             }
 
-            const int percentage = std::stoi(argv_[++i]);
+            const int percentage = std::stoi(argv_[++i]);   // soit: string to integer
 
             if(percentage < 0 || percentage > 100){
                 throw std::runtime_error("--duck must be between 0 and 100");
             }
 
-            float ratio = 1.f - static_cast<float>(percentage) / 100.f;
+            float amount = static_cast<float>(percentage) / 100.f;
 
-            config.setDuckRatio(ratio);
+            config.setDuckAmount(amount);
         }
         else{
             throw std::runtime_error("Unknown argument: " + arg + " \nUse -h or --help to find help");

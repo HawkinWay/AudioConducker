@@ -94,7 +94,7 @@ private:
 	// };
 	std::unordered_map<StreamId, struct pw_node*> nodes_;	// use STL to replace NodeInfo above
 	std::unordered_map<StreamId, std::unique_ptr<PipeWireStream>> monitors_;
-    std::unordered_map<StreamId, float> volumes_;
+    // std::unordered_map<StreamId, float> volumes_;
 	std::unordered_map<StreamId, std::unique_ptr<NodeData>> node_data_;
 	std::unordered_map<StreamId, AudioStream> streams_;
 

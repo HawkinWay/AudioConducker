@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 
         AudioMonitor monitor(backend);
 
-        DuckingEngine engine(backend, config.getDuckRatio());
+        DuckingEngine engine(backend, config.getDuckAmount());
 
         backend.initialize();
         std::thread loop(

@@ -7,14 +7,14 @@ namespace AudioConducker{
 class ConfigManager{
 public:
     std::string getFocusApplication() const;
-    float getDuckRatio() const;
+    float getDuckAmount() const;
 
     void setFocusApplication(const std::string& application);
-    void setDuckRatio(float level);
+    void setDuckAmount(float amount);
 private:
-    std::string focusApplication_ = "Firefox";
+    std::string focusApplication_{"Firefox"};
 
-    float duckRatio_ = 0.2f;
+    float duckAmount_{0.2f};
 };
 
 } // namespace AudioConducker

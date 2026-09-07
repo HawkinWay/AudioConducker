@@ -221,7 +221,7 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     if(const char* node_name = spa_dict_lookup(props, PW_KEY_NODE_NAME))        nodeData->nodeName = node_name;
     if(const char* application = spa_dict_lookup(props, PW_KEY_APP_NAME))       nodeData->application = application;
     if(const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS))    nodeData->mediaClass = media_class;
-    if( const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME))     nodeData->mediaName = media_name;
+    if(const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME))      nodeData->mediaName = media_name;
 
     auto& stream = backend->streams_[nodeData->id];
     
@@ -271,7 +271,9 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
 
         const float average = sum / static_cast<float>(count);
 
-       volumes_[streamId] = average;
+        // volumes_[streamId] = average;
+        auto& streamVolume = streams_[streamId];
+        streamVolume.volume = average;
 
         spdlog::info(
             "Node {} volume = {}",
@@ -364,7 +366,7 @@ void PipeWireBackend::onNodeRemoved(StreamId id){
     }
 
     monitors_.erase(id);
-    volumes_.erase(id);
+    // volumes_.erase(id);
     node_data_.erase(id);
     streams_.erase(id);
 }
