@@ -12,8 +12,18 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <atomic>
+#include <csignal>
 
 using namespace AudioConducker;
+
+std::atomic<bool> running{true};
+
+void signalHandler(int signal){
+    spdlog::info("Signal received: {}", signal);
+    running.store(false);
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -40,7 +50,9 @@ int main(int argc, char* argv[])
             }
         );
 
-        while(true){
+        std::signal(SIGINT, signalHandler);
+
+        while(running.load()){
             monitor.update();
 
             auto focus = monitor.findStreamByApplication(config.getFocusApplication());
@@ -49,6 +61,14 @@ int main(int argc, char* argv[])
 
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
+
+        engine.shutDown();
+
+        context.roundtrip(context.getCore(), context.getMainLoop());
+
+        context.quit();
+        
+        loop.join();
     }
     catch(const std::exception& e){
         std::cerr << "Error: " << e.what() << '\n';

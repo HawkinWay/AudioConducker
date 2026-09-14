@@ -14,7 +14,9 @@ public:
 
     pw_main_loop* getMainLoop() const;
 
-	static void roundtrip(struct pw_core* core, struct pw_main_loop* mainLoop);
+    void quit();
+
+    static void roundtrip(struct pw_core* core, struct pw_main_loop* mainLoop);
 
 private:
     struct roundtrip_data {

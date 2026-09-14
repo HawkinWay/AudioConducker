@@ -14,6 +14,8 @@ public:
 
     void process(std::optional<StreamId> focusStream);
     
+    void shutDown();
+
 private:
 	void restore();
     

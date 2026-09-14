@@ -48,6 +48,9 @@ pw_main_loop* PipeWireContext::getMainLoop() const{
     return loop_;
 }
 
+void PipeWireContext::quit(){
+    pw_main_loop_quit(loop_);
+}
 
 void PipeWireContext::roundtrip(struct pw_core* core, struct pw_main_loop* mainLoop){
     static const struct pw_core_events core_events = {

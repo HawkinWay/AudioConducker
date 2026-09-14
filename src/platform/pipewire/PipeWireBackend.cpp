@@ -54,14 +54,32 @@ void PipeWireBackend::setVolume(StreamId id, float volume){
         .volume = volume,
     };
 
-    pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 0, nullptr);
+    // spdlog::info(
+    //     "Queueing setVolume({}, {})",
+    //     id,
+    //     volume
+    // );
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 0, nullptr);
+    // spdlog::info(
+    //     "pw_loop_invoke returned {}, setVolume({}, {})",
+    //     result,
+    //     id,
+    //     volume
+    // );
 }
 
 void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
+    // spdlog::info(
+    //     "setVolume({}, {}) called from thread {}",
+    //     id,
+    //     volume,
+    //     std::hash<std::thread::id>{}(std::this_thread::get_id())
+    // );
+
     spdlog::info(
-        "setVolume({}) called from thread {}",
+        "[SET] node={} volume={}",
         id,
-        std::hash<std::thread::id>{}(std::this_thread::get_id())
+        volume
     );
 
     auto it = nodes_.find(id);
@@ -230,6 +248,15 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     stream.application = nodeData->application;
     stream.mediaClass = nodeData->mediaClass;
     stream.mediaName = nodeData->mediaName;
+
+    if (stream.application == "mpv") {
+        spdlog::info(
+            "[MPV] node={} volume={} mediaName='{}'",
+            stream.id,
+            stream.volume,
+            stream.mediaName
+        );
+    }
 }
 
 
