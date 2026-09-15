@@ -283,6 +283,10 @@ Cause
 I don't know, I didn't follow AI's debug steps. Instead, I have an idea without touching any intermediate core logic:
 When terminating or closing the program, make every node or stream restore to their original volume. 
 
+**replenish: because the restore() still request and queue in PipeWire daemon. Meanwhile the program is running completed and closed.
+Solution: add synchronous method (like roundtrip)
+
+{
   ~ ·····················································  19:50:36
 pw-cli enum-params 76 Props
   Object: size 1256, type Spa:Pod:Object:Param:Props (262146), id Spa:Enum:ParamId:Props (2)
@@ -570,5 +574,39 @@ pw-cli enum-params 76 Props
         Bool false
         String "audioconvert.filter-graph"
         String ""
+}
+
+===========================================================================================================
+
+#9
+9.1
+can't exit with Ctrl+C, the program still running while I use Ctrl+C
+
+9.2
+add roundtrip() after engine.shutDown():
+*** impl_ext_end_proxy called from wrong context, check thread and locking: 
+Operation not permitted 'pthread_equal(impl->thread, thread_id)' failed at 
+../spa/plugins/support/loop.c:608 loop_enter() and can't quit the program.
+
+9.3
+can exit with Ctrl+C, but abnormal:
+[1]    51375 segmentation fault (core dumped)  ./AudioConducker -f Firefox -d 60
+
+These bugs are introduced duringng the process of fixing #8
+
+Cause
+9.1
+
+9.2
+Threads problem: Running the same PipeWire main loop from two threads during shutdown. Synchronous and multithreads like pw_main_loop etc.
+Ctrl+C 的清理路径上有 PipeWire API 被"错误的线程"调用了。 PipeWire 的 SPA loop 内部记录了"哪个线程拥有这个 loop"，任何非线程安全的 PipeWire 调用都必须从那个线程发起。
+您的报错 'pthread_equal(impl->thread, thread_id)' failed at loop.c:608 loop_enter() 就是这个线程检查失败了，于是调用被中止（Operation not permitted），后续的 quit 没能生效，loop.join() 就永远等不到循环退出，程序卡死。
+9.3
+销毁阶段的竞态/悬垂问题. ~PipeWireBackend()
+
+Solution
+add sync() method in PipeWireContext and shutDown() method in PipeWireBackend
+sync() don't operate pw_main_loop_run as roundtrip()
+shutDown() make destructions be called mannually instead of being called automatically by the destructor
 
 

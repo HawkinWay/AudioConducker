@@ -64,7 +64,9 @@ int main(int argc, char* argv[])
 
         engine.shutDown();
 
-        context.roundtrip(context.getCore(), context.getMainLoop());
+        context.sync();
+
+        backend.shutdown();
 
         context.quit();
         

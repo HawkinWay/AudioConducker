@@ -27,6 +27,8 @@ public:
 
 	void initialize();
 
+	void shutdown();
+
 	std::vector<AudioStream> getStreams() override;
 
 	void setVolume(StreamId id, float volume)  override;
@@ -42,11 +44,11 @@ private:
 
 	static int do_set_volume(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 
-	struct DestroyProxyData {
-    	struct pw_proxy* proxy;
-	};
+	// struct DestroyProxyData {
+    // 	struct pw_proxy* proxy;
+	// };
 	
-	static int do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
+	// static int do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 	
 	// void updateVolumeFromProps(const spa_pod* param);
 
@@ -68,6 +70,8 @@ private:
         PipeWireBackend* self;
         StreamId id;
     };
+
+    static int do_shutdown(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 
 	void queryVolume(StreamId id);
 	

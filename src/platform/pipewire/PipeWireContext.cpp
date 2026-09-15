@@ -72,14 +72,77 @@ void PipeWireContext::roundtrip(struct pw_core* core, struct pw_main_loop* mainL
     spa_hook_remove(&core_listener);
 }
 
+void PipeWireContext::sync(){
+    struct sync_data sd = {
+        .self = this,
+        .pending = -1,
+        .done = false,
+    };
 
-void PipeWireContext::on_core_done(void *data, uint32_t id, int seq)
-{
+    static const struct pw_core_events core_events = {
+        .version = PW_VERSION_CORE_EVENTS,
+        .done = on_sync_done,
+    };
+
+    struct spa_hook listener;
+
+    pw_core_add_listener(core_, &listener, &core_events, &sd);
+
+    // int result = pw_loop_invoke(pw_main_loop_get_loop(loop_), do_sync, 0, &sd, sizeof(sd), true, nullptr);
+    int result = pw_loop_invoke(pw_main_loop_get_loop(loop_), do_sync, 0, &sd, sizeof(sd), true, nullptr);
+    
+
+    if(result < 0){
+        spa_hook_remove(&listener);
+
+        throw std::runtime_error(
+            "Failed to invoke PipeWire sync"
+        );
+    }
+
+    {
+        std::unique_lock<std::mutex> ul(sd.mtx);
+        // sd.cv.wait(ul, [&sd](){ return sd.done; });
+        if(!sd.cv.wait_for(ul, std::chrono::seconds(2), [&sd]{ return sd.done; })){
+            spdlog::warn("PipeWire sync timed out");
+        }
+    }
+
+    spa_hook_remove(&listener);
+
+}
+
+void PipeWireContext::on_core_done(void *data, uint32_t id, int seq){
     struct roundtrip_data *d = reinterpret_cast<roundtrip_data*>(data);
     
     if (id == PW_ID_CORE && seq == d->pending){
         pw_main_loop_quit(d->loop);
     }
+}
+
+void PipeWireContext::on_sync_done(void *data, uint32_t id, int seq){
+    struct sync_data *sd = reinterpret_cast<sync_data*>(data);
+
+    if(id == PW_ID_CORE && seq == sd->pending){
+        std::lock_guard<std::mutex> lg(sd->mtx);
+        sd->done = true;
+    }
+
+    sd->cv.notify_one();
+}
+
+int PipeWireContext::do_sync(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+    auto* sd = static_cast<sync_data*>(const_cast<void*>(data));
+
+    sd->pending = pw_core_sync(sd->self->core_, PW_ID_CORE, 0);
+
+    if(sd->pending < 0){
+        std::lock_guard<std::mutex> lg(sd->mtx);
+        sd->done = true;
+        sd->cv.notify_one();
+    }
+
+    return 0;
 }
 
 } // namespace AudioConducker

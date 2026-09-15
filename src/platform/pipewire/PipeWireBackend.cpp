@@ -10,18 +10,34 @@ PipeWireBackend::PipeWireBackend(PipeWireContext& context): context_(context){
     );
 }
 
-PipeWireBackend::~PipeWireBackend(){
-    for(auto& node : nodes_){
-        struct DestroyProxyData data = {
-            .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
-        };
-        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-    }
-}
+// PipeWireBackend::~PipeWireBackend(){
+//     for(auto& node : nodes_){
+//         struct DestroyProxyData data = {
+//             .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
+//         };
+//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
+//     }
+// }
+
+PipeWireBackend::~PipeWireBackend() = default;
 
 void PipeWireBackend::initialize(){
     context_.roundtrip(context_.getCore(), context_.getMainLoop());
 }
+
+void PipeWireBackend::shutdown(){
+    spdlog::info("Shutting down PipeWire backend");
+
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, this, sizeof(this), true, nullptr);
+
+    if(result < 0){
+        throw std::runtime_error(
+            "Failed to invoke PipeWire backend shutdown"
+        );
+    }
+}
+
+
 
 std::vector<AudioStream> PipeWireBackend::getStreams(){
     std::vector<AudioStream> result;
@@ -59,7 +75,7 @@ void PipeWireBackend::setVolume(StreamId id, float volume){
     //     id,
     //     volume
     // );
-    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 0, nullptr);
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 1, nullptr);
     // spdlog::info(
     //     "pw_loop_invoke returned {}, setVolume({}, {})",
     //     result,
@@ -113,13 +129,13 @@ int PipeWireBackend::do_set_volume(struct spa_loop *loop, bool async, uint32_t s
     return 0;
 }
 
-int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-    const auto* pd = static_cast<const DestroyProxyData*>(data);
-    if(pd->proxy){
-        pw_proxy_destroy(pd->proxy);
-    }
-    return 0;
-}
+// int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+//     const auto* pd = static_cast<const DestroyProxyData*>(data);
+//     if(pd->proxy){
+//         pw_proxy_destroy(pd->proxy);
+//     }
+//     return 0;
+// }
 
 #if 0
 void PipeWireBackend::updateVolumeFromProps(const spa_pod* param){
@@ -196,6 +212,38 @@ void PipeWireBackend::on_param(void *data, int seq, int32_t id, uint32_t index, 
     }
 }
 #endif
+
+int PipeWireBackend::do_shutdown(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+    auto* self = static_cast<PipeWireBackend*>(
+        const_cast<void*>(data)
+    );
+
+    spdlog::info("Destroying PipeWire backend resources");
+
+    self->monitors_.clear();
+
+    for(auto& [id, nodeData] : self->node_data_){
+        spa_hook_remove(&nodeData->node_listener);
+    }
+
+    self->node_data_.clear();
+
+    for(auto& [id, node] : self->nodes_){
+        if(node){
+            pw_proxy_destroy(reinterpret_cast<pw_proxy*>(node));
+        }
+    }
+
+    self->nodes_.clear();
+    self->streams_.clear();
+
+    self->observer_.reset();
+
+    spdlog::info("PipeWire backend shutdown complete");
+
+    return 0;
+}
+
 
 void PipeWireBackend::queryVolume(StreamId id){
     struct QueryVolumeData data = {
@@ -378,22 +426,42 @@ void PipeWireBackend::onNodeAdded(StreamId id){
     spdlog::info("Monitoring node {}", id);
 }
 
+// void PipeWireBackend::onNodeRemoved(StreamId id){
+//     spdlog::info("Removing node {}", id);
+
+//     auto it = nodes_.find(id);
+//     if(it != nodes_.end()){
+//         struct DestroyProxyData data = {
+//             .proxy = reinterpret_cast<pw_proxy*>(it->second),
+//         };
+
+//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
+        
+//         nodes_.erase(id);
+//     }
+
+//     monitors_.erase(id);
+//     // volumes_.erase(id);
+//     node_data_.erase(id);
+//     streams_.erase(id);
+// }
+
 void PipeWireBackend::onNodeRemoved(StreamId id){
     spdlog::info("Removing node {}", id);
 
     auto it = nodes_.find(id);
-    if(it != nodes_.end()){
-        struct DestroyProxyData data = {
-            .proxy = reinterpret_cast<pw_proxy*>(it->second),
-        };
 
-        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-        
-        nodes_.erase(id);
+    if(it != nodes_.end()){
+        if(it->second){
+            pw_proxy_destroy(
+                reinterpret_cast<pw_proxy*>(it->second)
+            );
+        }
+
+        nodes_.erase(it);
     }
 
     monitors_.erase(id);
-    // volumes_.erase(id);
     node_data_.erase(id);
     streams_.erase(id);
 }
