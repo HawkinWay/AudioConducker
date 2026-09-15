@@ -28,29 +28,44 @@ void signalHandler(int signal){
 int main(int argc, char* argv[])
 {
     try{
-        CLI cli(argc, argv);
-
+        
         ConfigManager config;
-
-        if(!cli.parse(config)){
-            return 0;
-        }
-
+          
+        spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
+        
         PipeWireContext context;
         PipeWireBackend backend(context);
-
-        AudioMonitor monitor(backend);
-
-        DuckingEngine engine(backend, config.getDuckAmount());
-
+        
         backend.initialize();
+        
+        
+        AudioMonitor monitor(backend);
+        
+        
         std::thread loop(
             [&](){
                 pw_main_loop_run(context.getMainLoop());
             }
         );
+        
+        // context.sync();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+        
+        CLI cli(argc, argv, backend);
+        if(!cli.parse(config)){
+            return 0;
+        }
+
+        DuckingEngine engine(backend, config.getDuckAmount());
 
         std::signal(SIGINT, signalHandler);
+
+        std::cout 
+                << "\nAudioConducker is running...\n" 
+                << "\n*Focus application: " << config.getFocusApplication()
+                << "\n*Duck amount: " << config.getDuckAmount() * 100.f << "%\n"
+                << "\nPress Ctrl+C to stop." << '\n';
 
         while(running.load()){
             monitor.update();
@@ -61,6 +76,8 @@ int main(int argc, char* argv[])
 
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
+
+        std::cout << "\nprogram stopping..." << '\n';
 
         engine.shutDown();
 

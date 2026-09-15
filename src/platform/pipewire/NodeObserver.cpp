@@ -93,15 +93,17 @@ void NodeObserver::registry_event_global(
     auto observer = static_cast<NodeObserver*>(data);
 
     
-    std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
+    // std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
+    spdlog::debug("---- Node found ----");
     
     if(props){
         const struct spa_dict_item* item;
 
         spa_dict_for_each(item, props) {
-            std::cout << item->key << " = "
-                    << (item->value ? item->value : "<null>")
-                    << '\n';
+            // std::cout << item->key << " = "
+            //         << (item->value ? item->value : "<null>")
+            //         << '\n';
+            spdlog::debug("{} = {}", item->key, (item->value ? item->value : "<null>"));
         }
 
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);

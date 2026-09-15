@@ -11,7 +11,7 @@ void DuckingEngine::process(std::optional<StreamId> focusStream){
     auto streams = backend_.getStreams();
 
     if(!focusStream){
-        spdlog::warn("Focus stream not found -> restore");
+        spdlog::debug("Focus stream not found -> restore");
         restore();
         return;
     }
@@ -45,7 +45,7 @@ void DuckingEngine::restore(){
     
     for(const auto& oV : originalVolumes_){     
         backend_.setVolume(oV.first, oV.second);
-        spdlog::info(
+        spdlog::debug(
             "Restoring stream {} to original volume {}",
             oV.first,
             oV.second

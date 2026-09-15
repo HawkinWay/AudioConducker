@@ -38,7 +38,6 @@ void PipeWireBackend::shutdown(){
 }
 
 
-
 std::vector<AudioStream> PipeWireBackend::getStreams(){
     std::vector<AudioStream> result;
 
@@ -92,7 +91,7 @@ void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
     //     std::hash<std::thread::id>{}(std::this_thread::get_id())
     // );
 
-    spdlog::info(
+    spdlog::debug(
         "[SET] node={} volume={}",
         id,
         volume
@@ -218,7 +217,7 @@ int PipeWireBackend::do_shutdown(struct spa_loop *loop, bool async, uint32_t seq
         const_cast<void*>(data)
     );
 
-    spdlog::info("Destroying PipeWire backend resources");
+    spdlog::info("Destroying PipeWire backend resources...");
 
     self->monitors_.clear();
 
@@ -297,14 +296,14 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     stream.mediaClass = nodeData->mediaClass;
     stream.mediaName = nodeData->mediaName;
 
-    if (stream.application == "mpv") {
-        spdlog::info(
-            "[MPV] node={} volume={} mediaName='{}'",
-            stream.id,
-            stream.volume,
-            stream.mediaName
-        );
-    }
+    // if (stream.application == "mpv") {
+    //     spdlog::info(
+    //         "[MPV] node={} volume={} mediaName='{}'",
+    //         stream.id,
+    //         stream.volume,
+    //         stream.mediaName
+    //     );
+    // }
 }
 
 
@@ -350,7 +349,7 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
         auto& streamVolume = streams_[streamId];
         streamVolume.volume = average;
 
-        spdlog::info(
+        spdlog::trace(
             "Node {} volume = {}",
             streamId,
             average
@@ -423,7 +422,7 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     monitors_[id] = std::move(monitor);
 
-    spdlog::info("Monitoring node {}", id);
+    spdlog::debug("Monitoring node {}", id);
 }
 
 // void PipeWireBackend::onNodeRemoved(StreamId id){
