@@ -28,6 +28,9 @@ bool CLI::parse(ConfigManager& config){
             printNodes();
             // return false;
         }
+        else if(arg == "--watch-nodes" || arg == "-w"){
+            isWatchNodes = true;
+        }
         else if(arg == "--focus" || arg == "-f"){
             if(i + 1 >= argc_){
                 throw std::runtime_error("--focus <app> requires an application name");
@@ -66,7 +69,7 @@ bool CLI::parse(ConfigManager& config){
             
         }
         else{
-            throw std::runtime_error("Unknown argument: " + arg + " \nUse -h or --help to find help");
+            throw std::runtime_error("AudioConducker: Unknown argument: " + arg + " \nUse -h or --help to find help");
         }
     }
 
@@ -83,6 +86,7 @@ void CLI::printHelp(){
         << "  -d, --duck <percent>    Duck amount (0-100, default: 80)\n"
         << "  -l, --log <level>       Set log level: trace/debug/info/warn/error\n"
         << "  -n, --nodes             Show all valid nodes\n"
+        << "  -w, --watch-nodes       Watch for nodes change\n"
         << "  -h, --help              Show this help message\n"
         << "  -v, --version           Show version\n\n"
         << "Example:\n"
@@ -120,6 +124,10 @@ void CLI::printNodes(){
     }
 
     std::cout << std::string(116, '=') << '\n';
+}
+
+bool CLI::isWatching() const{
+    return isWatchNodes;
 }
 
 } // namespace AudioConducker

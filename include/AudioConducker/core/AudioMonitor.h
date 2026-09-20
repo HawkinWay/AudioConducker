@@ -2,8 +2,10 @@
 
 #include "AudioConducker/core/Logger.h"
 #include "AudioConducker/audio/IAudioBackend.h"
+#include <vector>
 #include <string>
 #include <optional>
+#include <unordered_set>
 
 namespace AudioConducker{
 
@@ -12,6 +14,7 @@ public:
     explicit AudioMonitor(AudioBackend& backend);
 
     void update();
+    void watchNodes();
 
     std::vector<AudioStream> getActiveStreams() const;
 
@@ -20,6 +23,7 @@ public:
 private:
     AudioBackend& backend_;
     std::vector<AudioStream> streams_;
+    std::vector<AudioStream> previousStreams_;
 };
 
 } // namespace AudioConducker

@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
             return 0;
         }
         spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
+        const auto isWatchNodes = cli.isWatching();
         
         DuckingEngine engine(backend, config.getDuckAmount());
         
@@ -67,12 +68,13 @@ int main(int argc, char* argv[])
                 << "\nAudioConducker is running...\n" 
                 << "\n*Focus application: " << config.getFocusApplication()
                 << "\n*Duck amount: " << config.getDuckAmount() * 100.f << "%\n"
-                << "\nPress Ctrl+C to stop." << '\n';
+                << "\nPress Ctrl+C to stop.\n" << '\n';
 
         while(running.load()){
             monitor.update();
             
-            // monitor.watchNodes();
+            if(isWatchNodes)
+                monitor.watchNodes();
 
             auto focus = monitor.findStreamByApplication(config.getFocusApplication());
             

@@ -16,10 +16,13 @@ public:
     static void printHelp();
     static void printVersion();
     void printNodes();
+    bool isWatching() const;
 
 private:
     int argc_;
     char** argv_;
+
+    bool isWatchNodes{false};
 
     AudioMonitor monitor_;
 };
