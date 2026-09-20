@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
         
         ConfigManager config;
           
-        spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
         
         PipeWireContext context;
         PipeWireBackend backend(context);
@@ -50,14 +49,17 @@ int main(int argc, char* argv[])
         
         // context.sync();
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
-
+        
         
         CLI cli(argc, argv, backend);
         if(!cli.parse(config)){
             return 0;
         }
-
+        spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
+        
         DuckingEngine engine(backend, config.getDuckAmount());
+        
+        std::cout << "\n[AudioConducker initialized]\n";
 
         std::signal(SIGINT, signalHandler);
 
@@ -69,12 +71,14 @@ int main(int argc, char* argv[])
 
         while(running.load()){
             monitor.update();
+            
+            // monitor.watchNodes();
 
             auto focus = monitor.findStreamByApplication(config.getFocusApplication());
             
             engine.process(focus);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         std::cout << "\nprogram stopping..." << '\n';

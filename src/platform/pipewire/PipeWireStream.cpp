@@ -127,7 +127,7 @@ void PipeWireStream::process(){
     static uint64_t processCount = 0;
     processCount++;
     if (processCount % 100 == 0) {
-        spdlog::debug(
+        spdlog::trace(
             "PipeWireStream {} processed {} buffers, rms = {} active = {}",
             id_,
             processCount,

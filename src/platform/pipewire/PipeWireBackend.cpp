@@ -91,8 +91,8 @@ void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
     //     std::hash<std::thread::id>{}(std::this_thread::get_id())
     // );
 
-    spdlog::debug(
-        "[SET] node={} volume={}",
+    spdlog::trace(
+        "[setVolumeInternal] node={} volume={}",
         id,
         volume
     );
@@ -446,7 +446,7 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 // }
 
 void PipeWireBackend::onNodeRemoved(StreamId id){
-    spdlog::info("Removing node {}", id);
+    spdlog::debug("[PipeWireBackend] onNodeRemoved {}", id);
 
     auto it = nodes_.find(id);
 

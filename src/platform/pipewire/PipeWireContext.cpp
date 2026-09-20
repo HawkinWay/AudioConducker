@@ -103,7 +103,7 @@ void PipeWireContext::sync(){
     {
         std::unique_lock<std::mutex> ul(sd.mtx);
         // sd.cv.wait(ul, [&sd](){ return sd.done; });
-        if(!sd.cv.wait_for(ul, std::chrono::seconds(2), [&sd]{ return sd.done; })){
+        if(!sd.cv.wait_for(ul, std::chrono::seconds(1), [&sd]{ return sd.done; })){
             spdlog::warn("PipeWire sync timed out");
         }
     }

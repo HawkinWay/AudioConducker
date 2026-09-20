@@ -14,7 +14,7 @@ NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback, Node
     pw_registry_add_listener(registry_, &listener_, &registry_events_, this);
     // context.roundtrip(context.getCore(), context.getMainLoop());
 
-    std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
+    // std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
 }
 
 NodeObserver::~NodeObserver(){
@@ -99,12 +99,12 @@ void NodeObserver::registry_event_global(
     if(props){
         const struct spa_dict_item* item;
 
-        spa_dict_for_each(item, props) {
-            // std::cout << item->key << " = "
-            //         << (item->value ? item->value : "<null>")
-            //         << '\n';
-            spdlog::debug("{} = {}", item->key, (item->value ? item->value : "<null>"));
-        }
+        // spa_dict_for_each(item, props) {
+        //     // std::cout << item->key << " = "
+        //     //         << (item->value ? item->value : "<null>")
+        //     //         << '\n';
+        //     spdlog::debug("{} = {}", item->key, (item->value ? item->value : "<null>"));
+        // }
 
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
         const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
@@ -118,6 +118,8 @@ void NodeObserver::registry_event_global(
         if(!isApplication)    return;
         
         if(!name)       return;
+
+        if(strcmp(media_class, "Stream/Output/Audio") != 0)  return;
         
         // AudioStream stream = {
         //     .id = id,
@@ -143,8 +145,8 @@ void NodeObserver::registry_event_global(
         // observer->streams_.push_back(stream);
         // std::cout << "streams now = " << observer->streams_.size() << '\n';
         
-        spdlog::info(
-            "Node discovered: id={} name={} app={} mediaClass={}",
+        spdlog::debug(
+            "Node discovered: id={} \nname={} \napp={} \nmediaClass={}",
             id,
             name,
             app ? app : "",
@@ -162,7 +164,7 @@ void NodeObserver::registry_event_global(
 void NodeObserver::registry_event_global_remove(void *data, uint32_t id){
     auto* observer = static_cast<NodeObserver*>(data);
 
-    spdlog::info("Node removed: {}", id);
+    spdlog::debug("[NodeObserver] registry_event_global_remove: {}", id);
 
     // observer->streams_.erase(
     //     std::remove_if(

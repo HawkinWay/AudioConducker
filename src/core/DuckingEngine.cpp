@@ -10,8 +10,12 @@ void DuckingEngine::process(std::optional<StreamId> focusStream){
     // Logger::info("DuckingEngine processing...\n");
     auto streams = backend_.getStreams();
 
+    static uint64_t processCount = 0;
+    processCount++;
     if(!focusStream){
-        spdlog::debug("Focus stream not found -> restore");
+        if(processCount % 20 == 0){
+            spdlog::debug("Focus stream not found -> restore");
+        }
         restore();
         return;
     }
@@ -33,7 +37,7 @@ void DuckingEngine::process(std::optional<StreamId> focusStream){
 }
 
 void DuckingEngine::shutDown(){
-    spdlog::info("xxxSHUT DOWN calledxxx");
+    spdlog::info("xxxxx SHUT DOWN called xxxxx");
     restore();
 }
 
@@ -45,7 +49,7 @@ void DuckingEngine::restore(){
     
     for(const auto& oV : originalVolumes_){     
         backend_.setVolume(oV.first, oV.second);
-        spdlog::debug(
+        spdlog::trace(
             "Restoring stream {} to original volume {}",
             oV.first,
             oV.second
