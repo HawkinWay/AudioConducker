@@ -9,7 +9,7 @@
 
 namespace AudioConducker{
 
-CLI::CLI(int argc, char* argv[], AudioBackend& backend): argc_(argc), argv_(argv), monitor_(backend){ }
+CLI::CLI(int argc, char* argv[]/*, AudioBackend& backend*/): argc_(argc), argv_(argv)/*, monitor_(backend)*/{ }
 
 bool CLI::parse(ConfigManager& config){
 
@@ -25,11 +25,12 @@ bool CLI::parse(ConfigManager& config){
             return false;
         }
         else if(arg == "--nodes" || arg == "-n"){
-            printNodes();
+            // printNodes();
             // return false;
+            isShowNodes_ = true;
         }
         else if(arg == "--watch-nodes" || arg == "-w"){
-            isWatchNodes = true;
+            isWatchNodes_ = true;
         }
         else if(arg == "--focus" || arg == "-f"){
             if(i + 1 >= argc_){
@@ -78,7 +79,7 @@ bool CLI::parse(ConfigManager& config){
 
 void CLI::printHelp(){
     std::cout
-        << "AudioConducker - Dynamic audio ducking\n\n"
+        << "\nAudioConducker - Dynamic audio ducking\n\n"
         << "Usage:\n"
         << "  audioconducker --focus <app> [--duck <percent>]\n\n"
         << "Options:\n"
@@ -97,37 +98,41 @@ void CLI::printVersion(){
     std::cout << "AudioConducker v0.1.0\n";
 }
 
-void CLI::printNodes(){
-    std::cout << std::string(55, '=') << " Nodes " << std::string(55, '=') << '\n';
+// void CLI::printNodes(){
+//     std::cout << std::string(55, '=') << " Nodes " << std::string(55, '=') << '\n';
 
-    std::cout 
-            << std::left 
-            << std::setw(8)  << "ID" 
-            << std::setw(30) << "Name" 
-            << std::setw(30) << "Application" 
-            << std::setw(30) << "Media Class" 
-            << std::setw(20) << "Media Name" << '\n';
-    std::cout << std::string(116, '-') << '\n';
+//     std::cout 
+//             << std::left 
+//             << std::setw(8)  << "ID" 
+//             << std::setw(30) << "Name" 
+//             << std::setw(30) << "Application" 
+//             << std::setw(30) << "Media Class" 
+//             << std::setw(20) << "Media Name" << '\n';
+//     std::cout << std::string(116, '-') << '\n';
     
     
-    monitor_.update();
+//     monitor_.update();
     
-    std::vector<AudioStream> streams = monitor_.getActiveStreams();
-    for(const auto& stream : streams){
-        std::cout 
-                << std::left 
-                << std::setw(8) << stream.id 
-                << std::setw(30) << stream.name 
-                << std::setw(30) << stream.application 
-                << std::setw(30) << stream.mediaClass 
-                << std::setw(20) << stream.mediaName << '\n';
-    }
+//     std::vector<AudioStream> streams = monitor_.getActiveStreams();
+//     for(const auto& stream : streams){
+//         std::cout 
+//                 << std::left 
+//                 << std::setw(8) << stream.id 
+//                 << std::setw(30) << stream.name 
+//                 << std::setw(30) << stream.application 
+//                 << std::setw(30) << stream.mediaClass 
+//                 << std::setw(20) << stream.mediaName << '\n';
+//     }
 
-    std::cout << std::string(116, '=') << '\n';
+//     std::cout << std::string(116, '=') << '\n';
+// }
+
+bool CLI::isShowNodes() const{
+    return isShowNodes_;
 }
 
-bool CLI::isWatching() const{
-    return isWatchNodes;
+bool CLI::isWatchingNodes() const{
+    return isWatchNodes_;
 }
 
 } // namespace AudioConducker

@@ -28,18 +28,22 @@ void signalHandler(int signal){
 int main(int argc, char* argv[])
 {
     try{
-        
+
         ConfigManager config;
-          
+        
+        CLI cli(argc, argv);
+        if(!cli.parse(config)){
+            return 0;
+        }
+        const auto isShowNodes = cli.isShowNodes();
+        const auto isWatchNodes = cli.isWatchingNodes();
         
         PipeWireContext context;
         PipeWireBackend backend(context);
         
         backend.initialize();
         
-        
         AudioMonitor monitor(backend);
-        
         
         std::thread loop(
             [&](){
@@ -51,18 +55,18 @@ int main(int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
         
         
-        CLI cli(argc, argv, backend);
-        if(!cli.parse(config)){
-            return 0;
-        }
         spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
-        const auto isWatchNodes = cli.isWatching();
         
         DuckingEngine engine(backend, config.getDuckAmount());
         
         std::cout << "\n[AudioConducker initialized]\n";
 
         std::signal(SIGINT, signalHandler);
+
+        if(isShowNodes){
+            monitor.update();
+            monitor.showNodes();
+        }
 
         std::cout 
                 << "\nAudioConducker is running...\n" 

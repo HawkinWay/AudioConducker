@@ -14,6 +14,7 @@ public:
     explicit AudioMonitor(AudioBackend& backend);
 
     void update();
+    void showNodes();
     void watchNodes();
 
     std::vector<AudioStream> getActiveStreams() const;

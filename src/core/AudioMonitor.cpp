@@ -12,6 +12,35 @@ void AudioMonitor::update(){
     streams_ = backend_.getStreams();
 }
 
+void AudioMonitor::showNodes(){
+    std::cout << std::string(55, '=') << " Nodes " << std::string(55, '=') << '\n';
+
+    std::cout 
+            << std::left 
+            << std::setw(8)  << "ID" 
+            << std::setw(30) << "Name" 
+            << std::setw(30) << "Application" 
+            << std::setw(30) << "Media Class" 
+            << std::setw(20) << "Media Name" << '\n';
+    std::cout << std::string(116, '-') << '\n';
+    
+    
+    update();
+    
+    std::vector<AudioStream> streams = getActiveStreams();
+    for(const auto& stream : streams){
+        std::cout 
+                << std::left 
+                << std::setw(8) << stream.id 
+                << std::setw(30) << stream.name 
+                << std::setw(30) << stream.application 
+                << std::setw(30) << stream.mediaClass 
+                << std::setw(20) << stream.mediaName << '\n';
+    }
+
+    std::cout << std::string(116, '=') << '\n';
+}
+
 void AudioMonitor::watchNodes(){
     for(const auto& current : streams_){
         const auto it = std::find_if(

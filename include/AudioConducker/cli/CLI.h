@@ -9,22 +9,24 @@ namespace AudioConducker{
 
 class CLI{
 public:
-    CLI(int argc, char* argv[], AudioBackend& backend);
+    CLI(int argc, char* argv[]/*, AudioBackend& backend*/);
 
     bool parse(ConfigManager& config);
 
     static void printHelp();
     static void printVersion();
-    void printNodes();
-    bool isWatching() const;
+    // void printNodes();
+    bool isShowNodes() const;
+    bool isWatchingNodes() const;
 
 private:
     int argc_;
     char** argv_;
 
-    bool isWatchNodes{false};
+    bool isShowNodes_{false};
+    bool isWatchNodes_{false};
 
-    AudioMonitor monitor_;
+    // AudioMonitor monitor_;
 };
 
 } // namespace AudioConducker
