@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
         if(!cli.parse(config)){
             return 0;
         }
+        spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
         const auto isShowNodes = cli.isShowNodes();
         const auto isWatchNodes = cli.isWatchingNodes();
         
@@ -55,7 +56,6 @@ int main(int argc, char* argv[])
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
         
         
-        spdlog::set_level(spdlog::level::from_str(config.getLogLevel()));
         
         DuckingEngine engine(backend, config.getDuckAmount());
         
