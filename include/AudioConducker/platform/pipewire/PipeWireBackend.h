@@ -16,6 +16,7 @@
 #include <string>
 #include <memory>
 #include <thread>
+#include <mutex>
 
 namespace AudioConducker{
 
@@ -103,6 +104,8 @@ private:
 	std::unordered_map<StreamId, AudioStream> streams_;
 
 	std::unique_ptr<NodeObserver> observer_;
+
+	std::mutex streamMutex_;
 };
 
 } // namespace AudioConducker

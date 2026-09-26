@@ -112,7 +112,7 @@ void NodeObserver::registry_event_global(
 	    // const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
         // const char* node_description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
         
-        // if(!media_class)    return;
+        if(!media_class)    return;
         
         bool isApplication = app != nullptr || (name && strstr(name, "REAPER") != nullptr);
         if(!isApplication)    return;

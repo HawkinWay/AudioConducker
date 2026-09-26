@@ -89,7 +89,7 @@ void PipeWireContext::sync(){
     pw_core_add_listener(core_, &listener, &core_events, &sd);
 
     // int result = pw_loop_invoke(pw_main_loop_get_loop(loop_), do_sync, 0, &sd, sizeof(sd), true, nullptr);
-    int result = pw_loop_invoke(pw_main_loop_get_loop(loop_), do_sync, 0, &sd, sizeof(sd), true, nullptr);
+    int result = pw_loop_invoke(pw_main_loop_get_loop(loop_), do_sync, 0, nullptr, 0, true, &sd);
     
 
     if(result < 0){
@@ -132,7 +132,8 @@ void PipeWireContext::on_sync_done(void *data, uint32_t id, int seq){
 }
 
 int PipeWireContext::do_sync(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-    auto* sd = static_cast<sync_data*>(const_cast<void*>(data));
+    // auto* sd = static_cast<sync_data*>(const_cast<void*>(data));
+    auto* sd = static_cast<sync_data*>(user_data);
 
     sd->pending = pw_core_sync(sd->self->core_, PW_ID_CORE, 0);
 

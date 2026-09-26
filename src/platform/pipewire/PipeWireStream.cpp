@@ -155,6 +155,10 @@ void PipeWireStream::on_stream_param_changed(void *_data, uint32_t id, const str
         return;
     }
 
+    if(id != SPA_PARAM_Format){
+        return;
+    }
+
     if(spa_format_parse(param, &pwStream->format_.media_type, &pwStream->format_.media_subtype) < 0){
         return;
     }

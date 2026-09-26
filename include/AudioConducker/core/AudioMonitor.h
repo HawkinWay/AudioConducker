@@ -17,6 +17,8 @@ public:
     void showNodes();
     void watchNodes();
 
+    bool isTransient(const AudioStream& stream) const;
+
     std::vector<AudioStream> getActiveStreams() const;
 
     std::optional<StreamId> findStreamByApplication(const std::string& application) const;
@@ -25,6 +27,8 @@ private:
     AudioBackend& backend_;
     std::vector<AudioStream> streams_;
     std::vector<AudioStream> previousStreams_;
+
+    std::unordered_set<std::string> transientNames_ = {"AudioStream"};
 };
 
 } // namespace AudioConducker

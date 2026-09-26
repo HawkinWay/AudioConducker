@@ -41,8 +41,9 @@ void AudioMonitor::showNodes(){
     std::cout << std::string(116, '=') << '\n';
 }
 
-void AudioMonitor::watchNodes(){
+void AudioMonitor::watchNodes(){    
     for(const auto& current : streams_){
+        
         const auto it = std::find_if(
             previousStreams_.begin(),
             previousStreams_.end(),
@@ -50,14 +51,27 @@ void AudioMonitor::watchNodes(){
                 return current.id == previous.id;
             }
         );
-
+        
         if(it == previousStreams_.end()){
-            std::cout 
-                << std::left
-                << "[+] Node: " << std::setw(5)
-                << current.id
-                << current.application << "/"
-                << current.mediaName << '\n';
+            if(!isTransient(current)){
+                std::cout 
+                    << std::left
+                    << "[+] Node: " << std::setw(5)
+                    << current.id
+                    << current.application << "/"
+                    << current.mediaName << '\n';
+            }
+        }
+        else if(it->mediaName   != current.mediaName   ||
+                it->application != current.application ||
+                it->name        != current.name){
+            std::cout
+                    << std::left
+                    << "[~] Node: " << std::setw(5)
+                    << current.id
+                    << current.application << "/"
+                    << it->mediaName << " -> "
+                    << current.mediaName << '\n';
         }
     }
 
@@ -71,15 +85,21 @@ void AudioMonitor::watchNodes(){
         );
 
         if(it == streams_.end()){
-             std::cout 
-                << std::left
-                << "[-] Node: " << std::setw(5)
-                << previous.id
-                << previous.application << "/"
-                << previous.mediaName << '\n';
+            if(!isTransient(previous)){
+                std::cout 
+                   << std::left
+                   << "[-] Node: " << std::setw(5)
+                   << previous.id
+                   << previous.application << "/"
+                   << previous.mediaName << '\n';
+            }
         }
     }
     
+}
+
+bool AudioMonitor::isTransient(const AudioStream& stream) const{
+    return transientNames_.count(stream.mediaName) > 0;
 }
 
 std::vector<AudioStream> AudioMonitor::getActiveStreams() const{

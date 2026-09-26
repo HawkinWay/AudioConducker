@@ -20,7 +20,7 @@ using namespace AudioConducker;
 std::atomic<bool> running{true};
 
 void signalHandler(int signal){
-    spdlog::info("Signal received: {}", signal);
+    // spdlog::info("Signal received: {}", signal);
     running.store(false);
 }
 
@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
             }
         );
         
-        // context.sync();
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        context.sync();
+        // std::this_thread::sleep_for(std::chrono::milliseconds(300));
         
         
         
@@ -86,18 +86,18 @@ int main(int argc, char* argv[])
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-
-        std::cout << "\nprogram stopping..." << '\n';
-
+        
         engine.shutDown();
-
+        
         context.sync();
-
+        
         backend.shutdown();
-
+        
         context.quit();
         
         loop.join();
+
+        std::cout << "\nprogram stopped." << '\n';
     }
     catch(const std::exception& e){
         std::cerr << "Error: " << e.what() << '\n';

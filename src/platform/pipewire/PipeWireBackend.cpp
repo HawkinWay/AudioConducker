@@ -28,7 +28,8 @@ void PipeWireBackend::initialize(){
 void PipeWireBackend::shutdown(){
     spdlog::info("Shutting down PipeWire backend");
 
-    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, this, sizeof(this), true, nullptr);
+    // int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, this, sizeof(this), true, nullptr);
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, nullptr, 0, true, this);
 
     if(result < 0){
         throw std::runtime_error(
@@ -39,6 +40,8 @@ void PipeWireBackend::shutdown(){
 
 
 std::vector<AudioStream> PipeWireBackend::getStreams(){
+    std::lock_guard<std::mutex> lock(streamMutex_);
+
     std::vector<AudioStream> result;
 
     // auto streams = observer_->getStreams();
@@ -213,9 +216,10 @@ void PipeWireBackend::on_param(void *data, int seq, int32_t id, uint32_t index, 
 #endif
 
 int PipeWireBackend::do_shutdown(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-    auto* self = static_cast<PipeWireBackend*>(
-        const_cast<void*>(data)
-    );
+    // auto* self = static_cast<PipeWireBackend*>(
+    //     const_cast<void*>(data)
+    // );
+    auto* self = static_cast<PipeWireBackend*>(user_data);
 
     spdlog::info("Destroying PipeWire backend resources...");
 
@@ -273,13 +277,13 @@ void PipeWireBackend::onNodeParam(void *data, int seq, uint32_t id, uint32_t ind
 
 void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     auto* nodeData = static_cast<NodeData*>(data);
-
+    
     auto* backend = nodeData->backend;
-
+    
     if(!info || !info->props){
         return;
     }
-
+    
     const auto* props = info->props;
 
 
@@ -288,6 +292,16 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     if(const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS))    nodeData->mediaClass = media_class;
     if(const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME))      nodeData->mediaName = media_name;
 
+    if(nodeData->mediaClass != "Stream/Output/Audio") {
+        return;
+    }
+
+    if(nodeData->mediaName.empty()){
+        return;
+    }
+    
+    std::lock_guard<std::mutex> lock(backend->streamMutex_);
+
     auto& stream = backend->streams_[nodeData->id];
     
     stream.id = nodeData->id;
@@ -295,6 +309,9 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     stream.application = nodeData->application;
     stream.mediaClass = nodeData->mediaClass;
     stream.mediaName = nodeData->mediaName;
+    stream.controllable = true;
+
+    // spdlog::warn("[Backend onNodeInfo()] media_name = {}", stream.mediaName);
 
     // if (stream.application == "mpv") {
     //     spdlog::info(
@@ -346,8 +363,11 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
         const float average = sum / static_cast<float>(count);
 
         // volumes_[streamId] = average;
-        auto& streamVolume = streams_[streamId];
-        streamVolume.volume = average;
+        std::lock_guard<std::mutex> lock(streamMutex_);
+        // auto& streamVolume = streams_[streamId];
+        // streamVolume.volume = average;
+        auto it = streams_.find(streamId);
+        if(it != streams_.end())    it->second.volume = average;
 
         spdlog::trace(
             "Node {} volume = {}",
