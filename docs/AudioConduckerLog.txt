@@ -186,3 +186,427 @@ Solution
 implement global_remove in NodeObserver.
 When PipeWire removes a node: observer->streams_.erase(...); and notify the backend: removedCallback_(id);
 Then PipeWireBackend::onNodeRemoved() cleans up: nodes_, monitors_, node_data_, volumes_ and destroys the corresponding PipeWire proxy.
+
+
+
+===========================================================================================================
+
+
+#7
+in NodeObserver::registry_event_global: 
+
+	const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
+
+can't be parse correctly, then leads to:
+
+        ---- Node found ----
+        id: 111
+        object.serial = 2601
+        factory.id = 7
+        client.id = 68
+        client.api = pipewire-pulse
+        application.name = Firefox
+        node.name = Firefox
+        media.class = Stream/Output/Audio
+        name: Firefox
+        application: Firefox
+        media class: Stream/Output/Audio
+------->media name: <NOT PRESENT>         
+        node description: 
+        streams now = 6
+
+but in terminal use pw-cli info 111:
+
+                id: 111
+                permissions: rwxm-
+                type: PipeWire:Interface:Node/3
+        *	input ports: 0/0
+        *	output ports: 2/129
+        *	state: "idle"
+        *	properties:
+        *		client.api = "pipewire-pulse"
+        *		pulse.server.type = "unix"
+        *		pipewire.snap.id = "firefox"
+        *		pipewire.snap.audio.playback = "true"
+        *		pipewire.snap.audio.record = "true"
+        *		application.name = "Firefox"
+        *		application.process.id = "8169"
+        *		application.process.user = "shovy"
+        *		application.process.host = "shovy-Legion-R7000-APH9"
+        *		application.process.binary = "firefox"
+        *		application.language = "en_US.UTF-8"
+        *		window.x11.display = ":0"
+        *		application.process.machine-id = "ab8800beb365495fbe8b11da1a67fbaa"
+------->*		media.name = "网易云音乐"
+
+
+Cause
+The props passed to registry_event_global() are the global object's initial registry properties.
+PipeWire initially gives your registry listener something like:
+
+        object.serial
+        factory.id
+        client.id
+        client.api
+        application.name
+        node.name
+        media.class
+
+But the full Node properties (pw-cli info 111) contain additional properties: 
+
+        media.name
+        application.process.id
+        application.process.binary
+        ...
+
+
+Solution
+
+
+===========================================================================================================
+
+
+#8
+mpv player, SMPlayer
+Some apps like VLC Player or firefox webpages, when I terminate AudioConducker, pause them and then play, their volumes can be correctly restored
+But to mpv player and SMPlayer, their volumes seem like be "permenated ducked", use pause/play method still can't work, even though adjust their volume bars.
+(*using pavucontrol (PulseAudio Volume Control) find the problem) use pavucontrol can make their volumes correctly restored.
+It seems like some applications will keep their "current" volume at the terminating time, some won't beacuse they can restore through the pause-play reset operation.
+
+How to distinct the applications' volume control logic?
+1. Open your volume control(pavucontrol)
+2. Draging your applications volume bars, observering whether pavucontrol's volume bar changing accordingly.
+3. If yes, it can restore through pause-play reset operation. If not, vice versa.
+
+
+Cause
+I don't know, I didn't follow AI's debug steps. Instead, I have an idea without touching any intermediate core logic:
+When terminating or closing the program, make every node or stream restore to their original volume. 
+
+**replenish: because the restore() still request and queue in PipeWire daemon. Meanwhile the program is running completed and closed.
+Solution: add synchronous method (like roundtrip)
+
+{
+  ~ ·····················································  19:50:36
+pw-cli enum-params 76 Props
+  Object: size 1256, type Spa:Pod:Object:Param:Props (262146), id Spa:Enum:ParamId:Props (2)
+    Prop: key Spa:Pod:Object:Param:Props:volume (65539), flags 00000000
+      Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:mute (65540), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:channelVolumes (65544), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:channelMap (65547), flags 00000000
+      Array: child.size 4, child.type Spa:Id
+        Id 3        (Spa:Enum:AudioChannel:FL)
+        Id 4        (Spa:Enum:AudioChannel:FR)
+    Prop: key Spa:Pod:Object:Param:Props:softMute (65551), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:softVolumes (65552), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:monitorMute (65548), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:monitorVolumes (65549), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:params (524289), flags 00000000
+      Struct: size 1008
+        String "monitor.channel-volumes"
+        Bool false
+        String "channelmix.disable"
+        Bool false
+        String "channelmix.min-volume"
+        Float 0.000000
+        String "channelmix.max-volume"
+        Float 10.000000
+        String "channelmix.normalize"
+        Bool false
+        String "channelmix.mix-lfe"
+        Bool true
+        String "channelmix.upmix"
+        Bool true
+        String "channelmix.lfe-cutoff"
+        Float 0.000000
+        String "channelmix.fc-cutoff"
+        Float 0.000000
+        String "channelmix.rear-delay"
+        Float 0.000000
+        String "channelmix.stereo-widen"
+        Float 0.000000
+        String "channelmix.hilbert-taps"
+        Int 0
+        String "channelmix.upmix-method"
+        String "none"
+        String "resample.quality"
+        Int 4
+        String "resample.disable"
+        Bool false
+        String "dither.noise"
+        Int 0
+        String "dither.method"
+        String "none"
+        String "debug.wav-path"
+        String ""
+        String "channelmix.lock-volumes"
+        Bool false
+        String "audioconvert.filter-graph.disable"
+        Bool false
+        String "audioconvert.filter-graph"
+        String ""
+
+  ~ ·····················································  19:50:44
+❯ pw-cli enum-params 76 Props      
+  Object: size 1256, type Spa:Pod:Object:Param:Props (262146), id Spa:Enum:ParamId:Props (2)
+    Prop: key Spa:Pod:Object:Param:Props:volume (65539), flags 00000000
+      Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:mute (65540), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:channelVolumes (65544), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 0.300000
+        Float 0.300000
+    Prop: key Spa:Pod:Object:Param:Props:channelMap (65547), flags 00000000
+      Array: child.size 4, child.type Spa:Id
+        Id 3        (Spa:Enum:AudioChannel:FL)
+        Id 4        (Spa:Enum:AudioChannel:FR)
+    Prop: key Spa:Pod:Object:Param:Props:softMute (65551), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:softVolumes (65552), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:monitorMute (65548), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:monitorVolumes (65549), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:params (524289), flags 00000000
+      Struct: size 1008
+        String "monitor.channel-volumes"
+        Bool false
+        String "channelmix.disable"
+        Bool false
+        String "channelmix.min-volume"
+        Float 0.000000
+        String "channelmix.max-volume"
+        Float 10.000000
+        String "channelmix.normalize"
+        Bool false
+        String "channelmix.mix-lfe"
+        Bool true
+        String "channelmix.upmix"
+        Bool true
+        String "channelmix.lfe-cutoff"
+        Float 0.000000
+        String "channelmix.fc-cutoff"
+        Float 0.000000
+        String "channelmix.rear-delay"
+        Float 0.000000
+        String "channelmix.stereo-widen"
+        Float 0.000000
+        String "channelmix.hilbert-taps"
+        Int 0
+        String "channelmix.upmix-method"
+        String "none"
+        String "resample.quality"
+        Int 4
+        String "resample.disable"
+        Bool false
+        String "dither.noise"
+        Int 0
+        String "dither.method"
+        String "none"
+        String "debug.wav-path"
+        String ""
+        String "channelmix.lock-volumes"
+        Bool false
+        String "audioconvert.filter-graph.disable"
+        Bool false
+        String "audioconvert.filter-graph"
+        String ""
+
+  ~ ·····················································  19:51:14
+❯ pw-cli enum-params 76 Props
+  Object: size 1256, type Spa:Pod:Object:Param:Props (262146), id Spa:Enum:ParamId:Props (2)
+    Prop: key Spa:Pod:Object:Param:Props:volume (65539), flags 00000000
+      Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:mute (65540), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:channelVolumes (65544), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 0.300000
+        Float 0.300000
+    Prop: key Spa:Pod:Object:Param:Props:channelMap (65547), flags 00000000
+      Array: child.size 4, child.type Spa:Id
+        Id 3        (Spa:Enum:AudioChannel:FL)
+        Id 4        (Spa:Enum:AudioChannel:FR)
+    Prop: key Spa:Pod:Object:Param:Props:softMute (65551), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:softVolumes (65552), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:monitorMute (65548), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:monitorVolumes (65549), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:params (524289), flags 00000000
+      Struct: size 1008
+        String "monitor.channel-volumes"
+        Bool false
+        String "channelmix.disable"
+        Bool false
+        String "channelmix.min-volume"
+        Float 0.000000
+        String "channelmix.max-volume"
+        Float 10.000000
+        String "channelmix.normalize"
+        Bool false
+        String "channelmix.mix-lfe"
+        Bool true
+        String "channelmix.upmix"
+        Bool true
+        String "channelmix.lfe-cutoff"
+        Float 0.000000
+        String "channelmix.fc-cutoff"
+        Float 0.000000
+        String "channelmix.rear-delay"
+        Float 0.000000
+        String "channelmix.stereo-widen"
+        Float 0.000000
+        String "channelmix.hilbert-taps"
+        Int 0
+        String "channelmix.upmix-method"
+        String "none"
+        String "resample.quality"
+        Int 4
+        String "resample.disable"
+        Bool false
+        String "dither.noise"
+        Int 0
+        String "dither.method"
+        String "none"
+        String "debug.wav-path"
+        String ""
+        String "channelmix.lock-volumes"
+        Bool false
+        String "audioconvert.filter-graph.disable"
+        Bool false
+        String "audioconvert.filter-graph"
+        String ""
+
+  ~ ·····················································  19:51:19
+❯ pw-cli enum-params 76 Props
+  Object: size 1256, type Spa:Pod:Object:Param:Props (262146), id Spa:Enum:ParamId:Props (2)
+    Prop: key Spa:Pod:Object:Param:Props:volume (65539), flags 00000000
+      Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:mute (65540), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:channelVolumes (65544), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:channelMap (65547), flags 00000000
+      Array: child.size 4, child.type Spa:Id
+        Id 3        (Spa:Enum:AudioChannel:FL)
+        Id 4        (Spa:Enum:AudioChannel:FR)
+    Prop: key Spa:Pod:Object:Param:Props:softMute (65551), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:softVolumes (65552), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:monitorMute (65548), flags 00000000
+      Bool false
+    Prop: key Spa:Pod:Object:Param:Props:monitorVolumes (65549), flags 00000000
+      Array: child.size 4, child.type Spa:Float
+        Float 1.000000
+        Float 1.000000
+    Prop: key Spa:Pod:Object:Param:Props:params (524289), flags 00000000
+      Struct: size 1008
+        String "monitor.channel-volumes"
+        Bool false
+        String "channelmix.disable"
+        Bool false
+        String "channelmix.min-volume"
+        Float 0.000000
+        String "channelmix.max-volume"
+        Float 10.000000
+        String "channelmix.normalize"
+        Bool false
+        String "channelmix.mix-lfe"
+        Bool true
+        String "channelmix.upmix"
+        Bool true
+        String "channelmix.lfe-cutoff"
+        Float 0.000000
+        String "channelmix.fc-cutoff"
+        Float 0.000000
+        String "channelmix.rear-delay"
+        Float 0.000000
+        String "channelmix.stereo-widen"
+        Float 0.000000
+        String "channelmix.hilbert-taps"
+        Int 0
+        String "channelmix.upmix-method"
+        String "none"
+        String "resample.quality"
+        Int 4
+        String "resample.disable"
+        Bool false
+        String "dither.noise"
+        Int 0
+        String "dither.method"
+        String "none"
+        String "debug.wav-path"
+        String ""
+        String "channelmix.lock-volumes"
+        Bool false
+        String "audioconvert.filter-graph.disable"
+        Bool false
+        String "audioconvert.filter-graph"
+        String ""
+}
+
+===========================================================================================================
+
+#9
+9.1
+can't exit with Ctrl+C, the program still running while I use Ctrl+C
+
+9.2
+add roundtrip() after engine.shutDown():
+*** impl_ext_end_proxy called from wrong context, check thread and locking: 
+Operation not permitted 'pthread_equal(impl->thread, thread_id)' failed at 
+../spa/plugins/support/loop.c:608 loop_enter() and can't quit the program.
+
+9.3
+can exit with Ctrl+C, but abnormal:
+[1]    51375 segmentation fault (core dumped)  ./AudioConducker -f Firefox -d 60
+
+These bugs are introduced duringng the process of fixing #8
+
+Cause
+9.1
+
+9.2
+Threads problem: Running the same PipeWire main loop from two threads during shutdown. Synchronous and multithreads like pw_main_loop etc.
+Ctrl+C 的清理路径上有 PipeWire API 被"错误的线程"调用了。 PipeWire 的 SPA loop 内部记录了"哪个线程拥有这个 loop"，任何非线程安全的 PipeWire 调用都必须从那个线程发起。
+您的报错 'pthread_equal(impl->thread, thread_id)' failed at loop.c:608 loop_enter() 就是这个线程检查失败了，于是调用被中止（Operation not permitted），后续的 quit 没能生效，loop.join() 就永远等不到循环退出，程序卡死。
+9.3
+销毁阶段的竞态/悬垂问题. ~PipeWireBackend()
+
+Solution
+add sync() method in PipeWireContext and shutDown() method in PipeWireBackend
+sync() don't operate pw_main_loop_run as roundtrip()
+shutDown() make destructions be called mannually instead of being called automatically by the destructor
+
+

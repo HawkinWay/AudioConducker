@@ -10,17 +10,19 @@ namespace AudioConducker{
 
 class DuckingEngine{
 public:
-    DuckingEngine(AudioBackend& backend, float duckLevel = 0.2f);
+    DuckingEngine(AudioBackend& backend, float duckAmount = 0.8f);
 
     void process(std::optional<StreamId> focusStream);
     
+    void shutDown();
+
 private:
 	void restore();
     
 	void duck(StreamId focusStream, const std::vector<AudioStream>& streams);
 
     AudioBackend& backend_;
-    float duckLevel_;
+    float duckAmount_;
     std::unordered_map<StreamId, float> originalVolumes_;
     bool isActive_{false};
 };

@@ -14,7 +14,7 @@ NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback, Node
     pw_registry_add_listener(registry_, &listener_, &registry_events_, this);
     // context.roundtrip(context.getCore(), context.getMainLoop());
 
-    std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
+    // std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
 }
 
 NodeObserver::~NodeObserver(){
@@ -24,32 +24,32 @@ NodeObserver::~NodeObserver(){
     }
 }
 
-const std::vector<AudioStream>& NodeObserver::getStreams() const{
-	return streams_;
-}
+// const std::vector<AudioStream>& NodeObserver::getStreams() const{
+// 	return streams_;
+// }
 
-std::optional<std::reference_wrapper<AudioStream>> NodeObserver::getStreamById(StreamId id){
-    for(auto& stream : streams_){
-        if(stream.id == id){
-            return stream;
-        }
-    }
+// std::optional<std::reference_wrapper<AudioStream>> NodeObserver::getStreamById(StreamId id){
+//     for(auto& stream : streams_){
+//         if(stream.id == id){
+//             return stream;
+//         }
+//     }
 
-    return std::nullopt;
-}
+//     return std::nullopt;
+// }
 
 pw_registry* NodeObserver::getRegistry() const{
     return registry_;
 }
 
-void NodeObserver::setActive(StreamId id, bool active){
-    for(auto& stream : streams_){
-        if(stream.id == id){
-            stream.isActive = active;
-            return;
-        }
-    }
-}
+// void NodeObserver::setActive(StreamId id, bool active){
+//     for(auto& stream : streams_){
+//         if(stream.id == id){
+//             stream.isActive = active;
+//             return;
+//         }
+//     }
+// }
 
 
 // void NodeObserver::setVolume(StreamId id, float volume){
@@ -93,37 +93,67 @@ void NodeObserver::registry_event_global(
     auto observer = static_cast<NodeObserver*>(data);
 
     
-    std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
+    // std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
+    spdlog::debug("---- Node found ----");
     
     if(props){
+        const struct spa_dict_item* item;
+
+        // spa_dict_for_each(item, props) {
+        //     // std::cout << item->key << " = "
+        //     //         << (item->value ? item->value : "<null>")
+        //     //         << '\n';
+        //     spdlog::debug("{} = {}", item->key, (item->value ? item->value : "<null>"));
+        // }
+
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
         const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
         const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
 	    // const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
+        // const char* node_description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
         
-        // if(!media_class)    return;
+        if(!media_class)    return;
         
         bool isApplication = app != nullptr || (name && strstr(name, "REAPER") != nullptr);
         if(!isApplication)    return;
         
         if(!name)       return;
+
+        if(strcmp(media_class, "Stream/Output/Audio") != 0)  return;
         
-        AudioStream stream = {
-            .id = id,
-            .name = name ? name : "",
-            .application = app ? app : "",
-            .mediaClass = media_class ? media_class : "",
-	        // .mediaName = media_name ? media_name : ""
-        };
+        // AudioStream stream = {
+        //     .id = id,
+        //     .name = name ? name : "",
+        //     .application = app ? app : "",
+        //     .mediaClass = media_class ? media_class : "",
+	    //     .mediaName = media_name ? media_name : ""
+        // };
         
+        /*
         std::cout << "name: " << (name ? name : "") << '\n';
         std::cout << "application: " << (app ? app : "") << '\n';
         std::cout << "media class: " << (media_class ? media_class : "") << '\n';
-	    // std::cout << "media name: " << (media_name ? media_name : "") << '\n'; 
+	    if (media_name) {
+            std::cout << "media name: " << media_name << '\n';
+        } else {
+            std::cout << "media name: <NOT PRESENT>\n";
+        }
+        std::cout << "node description: " << (node_description ? node_description : "") << '\n';
+        */
 
-        observer->streams_.push_back(stream);
-        std::cout << "streams now = " << observer->streams_.size() << '\n';
+
+        // observer->streams_.push_back(stream);
+        // std::cout << "streams now = " << observer->streams_.size() << '\n';
         
+        spdlog::debug(
+            "Node discovered: id={} \nname={} \napp={} \nmediaClass={}",
+            id,
+            name,
+            app ? app : "",
+            media_class ? media_class : ""
+        );
+
+
         if(observer->callback_ != nullptr){
             observer->callback_(id);
         }
@@ -134,18 +164,18 @@ void NodeObserver::registry_event_global(
 void NodeObserver::registry_event_global_remove(void *data, uint32_t id){
     auto* observer = static_cast<NodeObserver*>(data);
 
-    spdlog::info("Node removed: {}", id);
+    spdlog::debug("[NodeObserver] registry_event_global_remove: {}", id);
 
-    observer->streams_.erase(
-        std::remove_if(
-            observer->streams_.begin(),
-            observer->streams_.end(),
-            [id](const AudioStream& audioStream){
-                return audioStream.id == id;
-            }
-        ),
-        observer->streams_.end()
-    );
+    // observer->streams_.erase(
+    //     std::remove_if(
+    //         observer->streams_.begin(),
+    //         observer->streams_.end(),
+    //         [id](const AudioStream& audioStream){
+    //             return audioStream.id == id;
+    //         }
+    //     ),
+    //     observer->streams_.end()
+    // );
 
     // C++ 20
     // std::erase_if(

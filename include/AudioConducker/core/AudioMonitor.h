@@ -1,8 +1,11 @@
 #pragma once
 
+#include "AudioConducker/core/Logger.h"
 #include "AudioConducker/audio/IAudioBackend.h"
+#include <vector>
 #include <string>
 #include <optional>
+#include <unordered_set>
 
 namespace AudioConducker{
 
@@ -11,6 +14,10 @@ public:
     explicit AudioMonitor(AudioBackend& backend);
 
     void update();
+    void showNodes();
+    void watchNodes();
+
+    bool isTransient(const AudioStream& stream) const;
 
     std::vector<AudioStream> getActiveStreams() const;
 
@@ -19,6 +26,9 @@ public:
 private:
     AudioBackend& backend_;
     std::vector<AudioStream> streams_;
+    std::vector<AudioStream> previousStreams_;
+
+    std::unordered_set<std::string> transientNames_ = {"AudioStream"};
 };
 
 } // namespace AudioConducker

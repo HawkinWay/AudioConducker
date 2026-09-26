@@ -4,14 +4,18 @@
 
 namespace AudioConducker{
 
-DuckingEngine::DuckingEngine(AudioBackend& backend, float duckLevel): backend_(backend), duckLevel_(duckLevel){}
+DuckingEngine::DuckingEngine(AudioBackend& backend, float duckAmount): backend_(backend), duckAmount_(duckAmount){}
 
 void DuckingEngine::process(std::optional<StreamId> focusStream){
-    Logger::info("DuckingEngine processing...\n");
+    // Logger::info("DuckingEngine processing...\n");
     auto streams = backend_.getStreams();
 
+    static uint64_t processCount = 0;
+    processCount++;
     if(!focusStream){
-        spdlog::info("Focus stream not found -> restore");
+        if(processCount % 20 == 0){
+            spdlog::debug("Focus stream not found -> restore");
+        }
         restore();
         return;
     }
@@ -32,15 +36,24 @@ void DuckingEngine::process(std::optional<StreamId> focusStream){
     }
 }
 
+void DuckingEngine::shutDown(){
+    spdlog::info("xxxxx SHUT DOWN called xxxxx");
+    restore();
+}
+
 void DuckingEngine::restore(){
     if(!isActive_){
         return;
     }
 
-    spdlog::info("1111111111RESTORE called.");
-
+    
     for(const auto& oV : originalVolumes_){     
         backend_.setVolume(oV.first, oV.second);
+        spdlog::trace(
+            "Restoring stream {} to original volume {}",
+            oV.first,
+            oV.second
+        );
     }
 
     originalVolumes_.clear();
@@ -59,16 +72,16 @@ void DuckingEngine::duck(StreamId focusStream, const std::vector<AudioStream>& s
         if(stream.id == focusStream)    continue;
         if(!stream.controllable)        continue;
 
-        spdlog::info(
-            "DUCK: focus={} stream={} volume={}",
-            focusStream,
-            stream.id,
-            stream.volume
-        );
+        // spdlog::info(
+        //     "DUCK: focus={} stream={} volume={}",
+        //     focusStream,
+        //     stream.id,
+        //     stream.volume
+        // );
         
         originalVolumes_[stream.id] = stream.volume;
 
-        backend_.setVolume(stream.id, stream.volume * duckLevel_);
+        backend_.setVolume(stream.id, stream.volume * (1.f - duckAmount_));
     }
 
     isActive_ = true;

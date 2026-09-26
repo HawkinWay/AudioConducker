@@ -10,31 +10,56 @@ PipeWireBackend::PipeWireBackend(PipeWireContext& context): context_(context){
     );
 }
 
-PipeWireBackend::~PipeWireBackend(){
-    for(auto& node : nodes_){
-        struct DestroyProxyData data = {
-            .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
-        };
-        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-    }
-}
+// PipeWireBackend::~PipeWireBackend(){
+//     for(auto& node : nodes_){
+//         struct DestroyProxyData data = {
+//             .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
+//         };
+//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
+//     }
+// }
+
+PipeWireBackend::~PipeWireBackend() = default;
 
 void PipeWireBackend::initialize(){
     context_.roundtrip(context_.getCore(), context_.getMainLoop());
 }
 
+void PipeWireBackend::shutdown(){
+    spdlog::info("Shutting down PipeWire backend");
+
+    // int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, this, sizeof(this), true, nullptr);
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, nullptr, 0, true, this);
+
+    if(result < 0){
+        throw std::runtime_error(
+            "Failed to invoke PipeWire backend shutdown"
+        );
+    }
+}
+
+
 std::vector<AudioStream> PipeWireBackend::getStreams(){
-    auto streams = observer_->getStreams();
+    std::lock_guard<std::mutex> lock(streamMutex_);
 
-    for(auto& stream : streams){
-        auto it = volumes_.find(stream.id);
+    std::vector<AudioStream> result;
 
-        if(it != volumes_.end()){
-            stream.volume = it->second;
-        }
+    // auto streams = observer_->getStreams();
+    result.reserve(streams_.size());
+
+    // for(auto& stream : streams){
+    //     auto it = volumes_.find(stream.id);
+
+    //     if(it != volumes_.end()){
+    //         stream.volume = it->second;
+    //     }
+    // }
+    for(const auto& stream : streams_){
+        result.push_back(stream.second);
     }
 
-    return streams;
+    // return stream;
+    return result;
 }
 
 void PipeWireBackend::setVolume(StreamId id, float volume){
@@ -47,14 +72,32 @@ void PipeWireBackend::setVolume(StreamId id, float volume){
         .volume = volume,
     };
 
-    pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 0, nullptr);
+    // spdlog::info(
+    //     "Queueing setVolume({}, {})",
+    //     id,
+    //     volume
+    // );
+    int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 1, nullptr);
+    // spdlog::info(
+    //     "pw_loop_invoke returned {}, setVolume({}, {})",
+    //     result,
+    //     id,
+    //     volume
+    // );
 }
 
 void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
-    spdlog::info(
-        "setVolume({}) called from thread {}",
+    // spdlog::info(
+    //     "setVolume({}, {}) called from thread {}",
+    //     id,
+    //     volume,
+    //     std::hash<std::thread::id>{}(std::this_thread::get_id())
+    // );
+
+    spdlog::trace(
+        "[setVolumeInternal] node={} volume={}",
         id,
-        std::hash<std::thread::id>{}(std::this_thread::get_id())
+        volume
     );
 
     auto it = nodes_.find(id);
@@ -88,13 +131,13 @@ int PipeWireBackend::do_set_volume(struct spa_loop *loop, bool async, uint32_t s
     return 0;
 }
 
-int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-    const auto* pd = static_cast<const DestroyProxyData*>(data);
-    if(pd->proxy){
-        pw_proxy_destroy(pd->proxy);
-    }
-    return 0;
-}
+// int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+//     const auto* pd = static_cast<const DestroyProxyData*>(data);
+//     if(pd->proxy){
+//         pw_proxy_destroy(pd->proxy);
+//     }
+//     return 0;
+// }
 
 #if 0
 void PipeWireBackend::updateVolumeFromProps(const spa_pod* param){
@@ -172,6 +215,39 @@ void PipeWireBackend::on_param(void *data, int seq, int32_t id, uint32_t index, 
 }
 #endif
 
+int PipeWireBackend::do_shutdown(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
+    // auto* self = static_cast<PipeWireBackend*>(
+    //     const_cast<void*>(data)
+    // );
+    auto* self = static_cast<PipeWireBackend*>(user_data);
+
+    spdlog::info("Destroying PipeWire backend resources...");
+
+    self->monitors_.clear();
+
+    for(auto& [id, nodeData] : self->node_data_){
+        spa_hook_remove(&nodeData->node_listener);
+    }
+
+    self->node_data_.clear();
+
+    for(auto& [id, node] : self->nodes_){
+        if(node){
+            pw_proxy_destroy(reinterpret_cast<pw_proxy*>(node));
+        }
+    }
+
+    self->nodes_.clear();
+    self->streams_.clear();
+
+    self->observer_.reset();
+
+    spdlog::info("PipeWire backend shutdown complete");
+
+    return 0;
+}
+
+
 void PipeWireBackend::queryVolume(StreamId id){
     struct QueryVolumeData data = {
         .self = this,
@@ -198,6 +274,55 @@ void PipeWireBackend::onNodeParam(void *data, int seq, uint32_t id, uint32_t ind
 
     nodeData->backend->handleNodeProps(nodeData->id, id, param);
 }
+
+void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
+    auto* nodeData = static_cast<NodeData*>(data);
+    
+    auto* backend = nodeData->backend;
+    
+    if(!info || !info->props){
+        return;
+    }
+    
+    const auto* props = info->props;
+
+
+    if(const char* node_name = spa_dict_lookup(props, PW_KEY_NODE_NAME))        nodeData->nodeName = node_name;
+    if(const char* application = spa_dict_lookup(props, PW_KEY_APP_NAME))       nodeData->application = application;
+    if(const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS))    nodeData->mediaClass = media_class;
+    if(const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME))      nodeData->mediaName = media_name;
+
+    if(nodeData->mediaClass != "Stream/Output/Audio") {
+        return;
+    }
+
+    if(nodeData->mediaName.empty()){
+        return;
+    }
+    
+    std::lock_guard<std::mutex> lock(backend->streamMutex_);
+
+    auto& stream = backend->streams_[nodeData->id];
+    
+    stream.id = nodeData->id;
+    stream.name = nodeData->nodeName;
+    stream.application = nodeData->application;
+    stream.mediaClass = nodeData->mediaClass;
+    stream.mediaName = nodeData->mediaName;
+    stream.controllable = true;
+
+    // spdlog::warn("[Backend onNodeInfo()] media_name = {}", stream.mediaName);
+
+    // if (stream.application == "mpv") {
+    //     spdlog::info(
+    //         "[MPV] node={} volume={} mediaName='{}'",
+    //         stream.id,
+    //         stream.volume,
+    //         stream.mediaName
+    //     );
+    // }
+}
+
 
 void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_pod* param){
      if (!spa_pod_is_object(param)) {
@@ -237,9 +362,14 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
 
         const float average = sum / static_cast<float>(count);
 
-       volumes_[streamId] = average;
+        // volumes_[streamId] = average;
+        std::lock_guard<std::mutex> lock(streamMutex_);
+        // auto& streamVolume = streams_[streamId];
+        // streamVolume.volume = average;
+        auto it = streams_.find(streamId);
+        if(it != streams_.end())    it->second.volume = average;
 
-        spdlog::info(
+        spdlog::trace(
             "Node {} volume = {}",
             streamId,
             average
@@ -271,9 +401,11 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     nodeData->backend = this;
     nodeData->id = id;
+    nodeData->node = node;
 
     static const pw_node_events node_events = {
         .version = PW_VERSION_NODE_EVENTS,
+        .info = onNodeInfo,
         .param = onNodeParam,
     };
 
@@ -291,12 +423,12 @@ void PipeWireBackend::onNodeAdded(StreamId id){
     // 查询真实 volume
     queryVolume(id);
 
-    auto stream = observer_->getStreamById(id);
+    // auto stream = observer_->getStreamById(id);
 
-    if(!stream){
-        spdlog::error("Stream {} not found", id);
-        return;
-    }
+    // if(!stream){
+    //     spdlog::error("Stream {} not found", id);
+    //     return;
+    // }
 
     auto monitor = std::make_unique<PipeWireStream>(
         context_,
@@ -310,30 +442,55 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     monitors_[id] = std::move(monitor);
 
-    spdlog::info("Monitoring node {}", id);
+    spdlog::debug("Monitoring node {}", id);
 }
 
+// void PipeWireBackend::onNodeRemoved(StreamId id){
+//     spdlog::info("Removing node {}", id);
+
+//     auto it = nodes_.find(id);
+//     if(it != nodes_.end()){
+//         struct DestroyProxyData data = {
+//             .proxy = reinterpret_cast<pw_proxy*>(it->second),
+//         };
+
+//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
+        
+//         nodes_.erase(id);
+//     }
+
+//     monitors_.erase(id);
+//     // volumes_.erase(id);
+//     node_data_.erase(id);
+//     streams_.erase(id);
+// }
+
 void PipeWireBackend::onNodeRemoved(StreamId id){
-    spdlog::info("Removing node {}", id);
+    spdlog::debug("[PipeWireBackend] onNodeRemoved {}", id);
 
     auto it = nodes_.find(id);
-    if(it != nodes_.end()){
-        struct DestroyProxyData data = {
-            .proxy = reinterpret_cast<pw_proxy*>(it->second),
-        };
 
-        pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-        
-        nodes_.erase(id);
+    if(it != nodes_.end()){
+        if(it->second){
+            pw_proxy_destroy(
+                reinterpret_cast<pw_proxy*>(it->second)
+            );
+        }
+
+        nodes_.erase(it);
     }
 
     monitors_.erase(id);
-    volumes_.erase(id);
     node_data_.erase(id);
+    streams_.erase(id);
 }
 
 void PipeWireBackend::onActivityChanged(StreamId id, bool active){
-    observer_->setActive(id, active);
+    auto it = streams_.find(id);
+    if(it == streams_.end())    return;
+
+    //observer_->setActive(id, active);
+    it->second.isActive = active;
 }
 
 } // namespace AudioConducker
