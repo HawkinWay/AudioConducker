@@ -16,7 +16,7 @@ bool CLI::parse(ConfigManager& config){
     for(int i = 1; i < argc_; i++){
         std::string arg = argv_[i];
 
-        if(arg == "--help" || arg == "-h"){
+        if(arg == "--help" || arg == "-H"){
             printHelp();
             return false;
         }
@@ -54,6 +54,51 @@ bool CLI::parse(ConfigManager& config){
             
             config.setDuckAmount(amount);
         }
+        else if(arg == "--attack" || arg == "-a"){
+            if(i + 1 >= argc_){
+                throw std::runtime_error("--attack requires a milliseconds");
+            }
+
+            const float ms = std::stof(argv_[++i]);
+
+            if(ms < 0){
+                throw std::runtime_error("--attack <ms> must be between 0 and 500");
+            }
+
+            float attackTime = ms / 1000.f;
+
+            config.setAttackTime(attackTime);
+        }
+        else if(arg == "--release" || arg == "-r"){
+            if(i + 1 >= argc_){
+                throw std::runtime_error("--release requires a milliseconds");
+            }
+
+            const float ms = std::stof(argv_[++i]);
+
+            if(ms < 0){
+                throw std::runtime_error("--release <ms> must be between 0 and 3000");
+            }
+
+            float releaseTime = ms / 1000.f;
+
+            config.setReleaseTime(releaseTime);
+        }
+        else if(arg == "--hold" || arg == "-h"){
+            if(i + 1 >= argc_){
+                throw std::runtime_error("--hold requires a milliseconds");
+            }
+
+            const float ms = std::stof(argv_[++i]);
+
+            if(ms < 0){
+                throw std::runtime_error("--hold <ms> must be between 0 and 2000");
+            }
+
+            float holdTime = ms / 1000.f;
+
+            config.setHoldTime(holdTime);
+        }
         else if(arg == "--log" || arg == "-l"){
             if(i + 1 >= argc_){
                 throw std::runtime_error("--log requires a log level: trace/debug/info/warn/error");
@@ -70,7 +115,7 @@ bool CLI::parse(ConfigManager& config){
             
         }
         else{
-            throw std::runtime_error("AudioConducker: Unknown argument: " + arg + " \nUse -h or --help to find help");
+            throw std::runtime_error("AudioConducker: Unknown argument: " + arg + " \nUse -H or --help to find help");
         }
     }
 
@@ -85,13 +130,19 @@ void CLI::printHelp(){
         << "Options:\n"
         << "  -f, --focus <app>       Focus application\n"
         << "  -d, --duck <percent>    Duck amount (0-100, default: 80)\n"
+        << "  -a, --attack <ms>       Attack time (0-500ms, default: 80)\n"
+        << "  -r, --release <ms>      Duck amount (0-3000ms, default: 500)\n"
+        << "  -h, --hold <ms>         Duck amount (0-2000ms, default: 400)\n"
         << "  -l, --log <level>       Set log level: trace/debug/info/warn/error\n"
         << "  -n, --nodes             Show all valid nodes\n"
         << "  -w, --watch-nodes       Watch for nodes change\n"
-        << "  -h, --help              Show this help message\n"
+        << "  -H, --help              Show this help message\n"
         << "  -v, --version           Show version\n\n"
         << "Example:\n"
-        << "  audioconducker --focus Firefox --duck 80\n";
+        << "  audioconducker --focus Firefox --duck 80\n"
+        << "  audioconducker -f Firefox -d 60 -a 60 -r 500 -h 300\n"
+        << "  audioconducker -n\n"
+        << "  audioconducker --watch-nodes\n";
 }
 
 void CLI::printVersion(){

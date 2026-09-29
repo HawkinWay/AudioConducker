@@ -4,87 +4,96 @@
 
 namespace AudioConducker{
 
-DuckingEngine::DuckingEngine(AudioBackend& backend, float duckAmount): backend_(backend), duckAmount_(duckAmount){}
+DuckingEngine::DuckingEngine(AudioBackend& backend, float duckAmount, float attackTime, float releaseTime, float holdTime): 
+        backend_(backend), 
+        duckAmount_(duckAmount),
+        attackTime_(attackTime),
+        releaseTime_(releaseTime),
+        holdTime_(std::chrono::milliseconds(int(holdTime * 1000))){}
 
-void DuckingEngine::process(std::optional<StreamId> focusStream){
+void DuckingEngine::process(std::optional<StreamId> focusStream, float deltaTime){
     // Logger::info("DuckingEngine processing...\n");
     auto streams = backend_.getStreams();
 
-    static uint64_t processCount = 0;
-    processCount++;
-    if(!focusStream){
-        if(processCount % 20 == 0){
-            spdlog::debug("Focus stream not found -> restore");
-        }
-        restore();
-        return;
-    }
+    // static uint64_t processCount = 0;
+    // processCount++;
+    // if(!focusStream){
+    //     if(processCount % 20 == 0){
+    //         spdlog::debug("Focus stream not found -> restore");
+    //     }
+    //     restore();
+    //     return;
+    // }
 
     bool focusActive = false;
 
-    for(const auto &stream : streams){
-        if(stream.id == *focusStream){
-            focusActive = stream.isActive;
-            break;
+    if(focusStream){
+        for(const auto &stream : streams){
+            if(stream.id == *focusStream){
+                focusActive = stream.isActive;
+                break;
+            }
         }
     }
-
+    
     if(focusActive){
-        duck(*focusStream, streams);
+        // duck(*focusStream, streams);
+        lastTime_ = Clock::now();
+        updateDucking(*focusStream, streams, deltaTime);
+        
     }else{
-        restore();
+        // restore(deltaTime);
+        if(!lastTime_ || Clock::now() - *lastTime_ < holdTime_)    return;
+        updateRestore(deltaTime);
     }
+
 }
 
 void DuckingEngine::shutDown(){
     spdlog::info("xxxxx SHUT DOWN called xxxxx");
-    restore();
-}
-
-void DuckingEngine::restore(){
-    if(!isActive_){
-        return;
-    }
-
     
-    for(const auto& oV : originalVolumes_){     
-        backend_.setVolume(oV.first, oV.second);
-        spdlog::trace(
-            "Restoring stream {} to original volume {}",
-            oV.first,
-            oV.second
-        );
+    for(const auto& [id, state] : states_){
+        backend_.setVolume(id, state.originalVolume);
     }
 
-    originalVolumes_.clear();
-
-    isActive_ = false;
+    states_.clear();
 }
 
-void DuckingEngine::duck(StreamId focusStream, const std::vector<AudioStream>& streams){
-    if(isActive_){
-        return;
-    }
-
-    originalVolumes_.clear();
-
-    for(const auto &stream : streams){
-        if(stream.id == focusStream)    continue;
-        if(!stream.controllable)        continue;
-
-        // spdlog::info(
-        //     "DUCK: focus={} stream={} volume={}",
-        //     focusStream,
-        //     stream.id,
-        //     stream.volume
-        // );
+void DuckingEngine::updateDucking(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams, float deltaTime){
+    for(const auto& stream : streams){
+        if(stream.id == *focusStream)   continue;
+        if(!stream.controllable) continue;
         
-        originalVolumes_[stream.id] = stream.volume;
+        auto it = states_.find(stream.id);
+        
+        if(it == states_.end()){
+            StreamState state = {
+                .originalVolume = stream.volume,
+                .smoother = VolumeSmoother(attackTime_, releaseTime_),
+            };
+            
+            state.smoother.setCurrent(stream.volume);
+            
+            it = states_.emplace(stream.id, std::move(state)).first;
+        }
+        
+        auto& state = it->second;
 
-        backend_.setVolume(stream.id, stream.volume * (1.f - duckAmount_));
+        float target = state.originalVolume * (1 - duckAmount_);
+        state.smoother.setTarget(target);
+        
+        float volume = state.smoother.process(deltaTime);
+        
+        backend_.setVolume(stream.id, volume);
     }
+}
 
-    isActive_ = true;
+void DuckingEngine::updateRestore(float deltaTime){
+    for(auto& [id, state] : states_){
+        state.smoother.setTarget(state.originalVolume);
+        float volume = state.smoother.process(deltaTime);
+        backend_.setVolume(id, volume);
+    }
 }
 
 

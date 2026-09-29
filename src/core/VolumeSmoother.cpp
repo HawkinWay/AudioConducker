@@ -31,6 +31,11 @@ float VolumeSmoother::process(float deltaTime){
 
     float time = distance < 0.f ? attackTime_ : releaseTime_;
 
+    if(time == 0.f){
+        current_ = target_;
+        return current_;
+    }
+
     float maxChange = deltaTime / time;
 
     if(std::abs(distance) <= maxChange){

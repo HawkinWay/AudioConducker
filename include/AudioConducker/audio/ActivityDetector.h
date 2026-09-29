@@ -6,7 +6,7 @@ namespace AudioConducker{
 
 class ActivityDetector{
 public:
-    explicit ActivityDetector(float threshold = 0.01f);
+    explicit ActivityDetector(float threshold = 0.05f);
 
     bool process(const float* samples, size_t count);
 
