@@ -1,6 +1,5 @@
 #include "AudioConducker/core/DuckingEngine.h"
 
-#include <iostream>
 
 namespace AudioConducker{
 
@@ -43,9 +42,14 @@ void DuckingEngine::process(std::optional<StreamId> focusStream, float deltaTime
         
     }else{
         // restore(deltaTime);
-        if(!lastTime_ || Clock::now() - *lastTime_ < holdTime_)    return;
-        updateRestore(deltaTime);
+        if(!lastTime_ || Clock::now() - *lastTime_ < holdTime_){
+            
+        }else{
+            updateRestore(deltaTime);
+        }
     }
+
+    syncWithStreams(focusStream, streams);
 
 }
 
@@ -78,7 +82,7 @@ void DuckingEngine::updateDucking(std::optional<StreamId> focusStream, const std
         }
         
         auto& state = it->second;
-
+        
         float target = state.originalVolume * (1 - duckAmount_);
         state.smoother.setTarget(target);
         
@@ -89,12 +93,44 @@ void DuckingEngine::updateDucking(std::optional<StreamId> focusStream, const std
 }
 
 void DuckingEngine::updateRestore(float deltaTime){
-    for(auto& [id, state] : states_){
+    for(auto it = states_.begin(); it != states_.end(); ){
+        auto& state = it->second;
         state.smoother.setTarget(state.originalVolume);
         float volume = state.smoother.process(deltaTime);
-        backend_.setVolume(id, volume);
+        backend_.setVolume(it->first, volume);
+
+        if(!state.smoother.isSmoothing()){
+            it = states_.erase(it);
+        }else{
+            it++;
+        }
     }
 }
 
+void DuckingEngine::syncWithStreams(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams){
+    std::erase_if(states_,
+                  [&](const auto& kv){
+                    return !std::any_of(streams.begin(), 
+                                        streams.end(), 
+                                        [&](const AudioStream& sm){
+                                            return sm.id == kv.first;
+                                        });
+                  });
+    
+    if(!focusStream)    return;
+
+    for(const auto& stream : streams){
+        if(stream.id == focusStream) continue;
+        if(!stream.controllable)    continue;
+        if(states_.contains(stream.id)) continue;
+
+        StreamState streamState = {
+            .originalVolume = stream.volume,
+            .smoother = VolumeSmoother(attackTime_, releaseTime_),
+        };
+        streamState.smoother.setCurrent(stream.volume);
+        states_.emplace(stream.id, std::move(streamState));
+    }
+}
 
 } // namespace AudioConducker

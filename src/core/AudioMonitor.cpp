@@ -28,7 +28,7 @@ void AudioMonitor::showNodes(){
     update();
     
     std::vector<AudioStream> streams = getActiveStreams();
-    for(const auto& stream : streams){
+    for(const auto& stream : streams_){
         std::cout 
                 << std::left 
                 << std::setw(8) << stream.id 

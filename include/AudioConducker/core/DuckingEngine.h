@@ -30,6 +30,8 @@ private:
     
     void updateRestore(float deltaTime);
 
+    void syncWithStreams(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams);
+
     AudioBackend& backend_;
     
     float duckAmount_;
