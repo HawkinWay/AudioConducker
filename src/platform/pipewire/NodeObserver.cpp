@@ -12,9 +12,6 @@ NodeObserver::NodeObserver(PipeWireContext& context, NodeCallback callback, Node
     spa_zero(listener_);
     
     pw_registry_add_listener(registry_, &listener_, &registry_events_, this);
-    // context.roundtrip(context.getCore(), context.getMainLoop());
-
-    // std::cout << "\n[NodeObserver] Pipewire initialized.\n"; 
 }
 
 NodeObserver::~NodeObserver(){
@@ -24,59 +21,11 @@ NodeObserver::~NodeObserver(){
     }
 }
 
-// const std::vector<AudioStream>& NodeObserver::getStreams() const{
-// 	return streams_;
-// }
-
-// std::optional<std::reference_wrapper<AudioStream>> NodeObserver::getStreamById(StreamId id){
-//     for(auto& stream : streams_){
-//         if(stream.id == id){
-//             return stream;
-//         }
-//     }
-
-//     return std::nullopt;
-// }
 
 pw_registry* NodeObserver::getRegistry() const{
     return registry_;
 }
 
-// void NodeObserver::setActive(StreamId id, bool active){
-//     for(auto& stream : streams_){
-//         if(stream.id == id){
-//             stream.isActive = active;
-//             return;
-//         }
-//     }
-// }
-
-
-// void NodeObserver::setVolume(StreamId id, float volume){
-//     auto it = nodes_.find(id);
-//     if(it == nodes_.end()){
-//         return;
-//     }
-// 
-//     struct pw_node* node = it->second;
-//  
-//     uint8_t buffer[1024];
-//     struct spa_pod_builder builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
-//     float volumes[2] = {volume, volume};
-//     const struct spa_pod* param = reinterpret_cast<const struct spa_pod*>(
-//         spa_pod_builder_add_object(
-//             &builder, 
-//             SPA_TYPE_OBJECT_Props, 
-//             SPA_PARAM_Props, 
-//             SPA_PROP_channelVolumes, 
-//             SPA_POD_Array(sizeof(float), SPA_TYPE_Float, 2, volumes)
-//         )
-//     );
-//     int result = pw_node_set_param(node, SPA_PARAM_Props, 0, param);
-//     if(result < 0){
-//         std::cerr << "Failed to set volume: " << result << '\n';
-//     }
-// }
 
 void NodeObserver::registry_event_global(
     void *data, 
@@ -93,25 +42,16 @@ void NodeObserver::registry_event_global(
     auto observer = static_cast<NodeObserver*>(data);
 
     
-    // std::cout << "\n---- Node found ----\n" << "id: " << id << '\n';
     spdlog::debug("---- Node found ----");
     
     if(props){
         const struct spa_dict_item* item;
 
-        // spa_dict_for_each(item, props) {
-        //     // std::cout << item->key << " = "
-        //     //         << (item->value ? item->value : "<null>")
-        //     //         << '\n';
-        //     spdlog::debug("{} = {}", item->key, (item->value ? item->value : "<null>"));
-        // }
 
         const char* name = spa_dict_lookup(props, PW_KEY_NODE_NAME);
         const char* app = spa_dict_lookup(props,PW_KEY_APP_NAME);
         const char* media_class = spa_dict_lookup(props, PW_KEY_MEDIA_CLASS);
-	    // const char* media_name = spa_dict_lookup(props, PW_KEY_MEDIA_NAME);
-        // const char* node_description = spa_dict_lookup(props, PW_KEY_NODE_DESCRIPTION);
-        
+       
         if(!media_class)    return;
         
         bool isApplication = app != nullptr || (name && strstr(name, "REAPER") != nullptr);
@@ -121,30 +61,7 @@ void NodeObserver::registry_event_global(
 
         if(strcmp(media_class, "Stream/Output/Audio") != 0)  return;
         
-        // AudioStream stream = {
-        //     .id = id,
-        //     .name = name ? name : "",
-        //     .application = app ? app : "",
-        //     .mediaClass = media_class ? media_class : "",
-	    //     .mediaName = media_name ? media_name : ""
-        // };
-        
-        /*
-        std::cout << "name: " << (name ? name : "") << '\n';
-        std::cout << "application: " << (app ? app : "") << '\n';
-        std::cout << "media class: " << (media_class ? media_class : "") << '\n';
-	    if (media_name) {
-            std::cout << "media name: " << media_name << '\n';
-        } else {
-            std::cout << "media name: <NOT PRESENT>\n";
-        }
-        std::cout << "node description: " << (node_description ? node_description : "") << '\n';
-        */
-
-
-        // observer->streams_.push_back(stream);
-        // std::cout << "streams now = " << observer->streams_.size() << '\n';
-        
+  
         spdlog::debug(
             "Node discovered: id={} \nname={} \napp={} \nmediaClass={}",
             id,
@@ -165,25 +82,6 @@ void NodeObserver::registry_event_global_remove(void *data, uint32_t id){
     auto* observer = static_cast<NodeObserver*>(data);
 
     spdlog::debug("[NodeObserver] registry_event_global_remove: {}", id);
-
-    // observer->streams_.erase(
-    //     std::remove_if(
-    //         observer->streams_.begin(),
-    //         observer->streams_.end(),
-    //         [id](const AudioStream& audioStream){
-    //             return audioStream.id == id;
-    //         }
-    //     ),
-    //     observer->streams_.end()
-    // );
-
-    // C++ 20
-    // std::erase_if(
-    //     observer->streams_, 
-    //     [id](const AudioStream& audioStream){
-    //         return audioStream.id == id;
-    //     }
-    // );
 
     if(observer->removedCallback_ != nullptr){
         observer->removedCallback_(id);

@@ -31,8 +31,6 @@ public:
 
     void connect(StreamId id);
 
-    const AudioStream& getAudioStream() const;
-
 private:
     static void on_process(void* userdata);
 

@@ -21,13 +21,8 @@ public:
 	
 	~NodeObserver();
 
-	// const std::vector<AudioStream>& getStreams() const;
-
-	// std::optional<std::reference_wrapper<AudioStream>> getStreamById(StreamId id);
-
 	struct pw_registry* getRegistry() const;
 
-	// void setActive(StreamId id, bool active);
 
 private:
 	static void registry_event_global(
@@ -45,8 +40,6 @@ private:
 
 	struct pw_registry* registry_;
 	struct spa_hook listener_;		// keep track of the listener
-
-	// std::vector<AudioStream> streams_;
 
 	NodeCallback callback_;
 	NodeRemovedCallback removedCallback_;

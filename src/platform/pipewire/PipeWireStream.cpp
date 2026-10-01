@@ -33,6 +33,7 @@ PipeWireStream::~PipeWireStream(){
 }
 
 void PipeWireStream::connect(StreamId id){
+    
     const struct spa_pod *params[1];
     uint32_t n_params = 0; 
     uint8_t buffer[1024];
@@ -58,19 +59,12 @@ void PipeWireStream::connect(StreamId id){
         n_params
     );
 
-    // std::cout << "[PipeWireStream] connect result = " << result << '\n';
-    // std::cout << "[PipeWireStream] stream state = " << pw_stream_state_as_string(pw_stream_get_state(stream_, nullptr)) << '\n';
     spdlog::debug("[PipeWireStream] connect result = {}", result);
     spdlog::debug("[PipeWireStream] stream state = {}", pw_stream_state_as_string(pw_stream_get_state(stream_, nullptr)));
 
     if(result < 0){
         std::cerr << "Failed to connect stream: " << result << '\n';
     }
-}
-
-
-const AudioStream& PipeWireStream::getAudioStream() const{
-    return audioStream_;
 }
 
 
@@ -81,14 +75,6 @@ void PipeWireStream::on_process(void* userdata){
 }
 
 void PipeWireStream::process(){
-    // static uint64_t processThreadCount = 0;
-    // processThreadCount++;
-    // if(processThreadCount % 100 == 0){
-    //     spdlog::info(
-    //         "process() thread {}",
-    //         std::hash<std::thread::id>{}(std::this_thread::get_id())
-    //     );
-    // }
 
     struct pw_buffer* pw_buff;
     struct spa_buffer* spa_buff;
@@ -108,13 +94,7 @@ void PipeWireStream::process(){
     n_samples = spa_buff->datas[0].chunk->size / sizeof(float);
 
     bool active = detector_.process(samples, n_samples);
-    // spdlog::info(
-    //     "PipeWireStream {}: this={}, rms={}, active={}",
-    //     audioStream_.id,
-    //     static_cast<const void*>(this),
-    //     detector_.getRMS(samples, n_samples),
-    //     active
-    // );
+
     if(active != lastActive_){
         lastActive_ = active;
         
@@ -140,7 +120,6 @@ void PipeWireStream::process(){
 }
 
 void PipeWireStream::on_state_changed(void *data, pw_stream_state old, pw_stream_state state, const char *error){
-    // std::cout << "Stream state: " << pw_stream_state_as_string(state) << '\n';
     spdlog::trace("Stream state: {}", pw_stream_state_as_string(state));
 
     if (error)
@@ -168,7 +147,6 @@ void PipeWireStream::on_stream_param_changed(void *_data, uint32_t id, const str
     }
 
     spa_format_audio_raw_parse(param, &pwStream->format_.info.raw);
-    // std::cout << "\nCapturing rate: " << pwStream->format_.info.raw.rate << "\nChannels: " << pwStream->format_.info.raw.channels << '\n';
     spdlog::trace("Capturing rate: {}, Channels: {}", pwStream->format_.info.raw.rate, pwStream->format_.info.raw.channels);
 }
 
