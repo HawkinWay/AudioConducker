@@ -17,6 +17,8 @@
 
 using namespace AudioConducker;
 
+using Clock = std::chrono::steady_clock;
+
 std::atomic<bool> running{true};
 
 void signalHandler(int signal){
@@ -56,8 +58,13 @@ int main(int argc, char* argv[])
         // std::this_thread::sleep_for(std::chrono::milliseconds(300));
         
         
-        
-        DuckingEngine engine(backend, config.getDuckAmount());
+        DuckingEngine engine(
+            backend, 
+            config.getDuckAmount(), 
+            config.getAttackTime(),
+            config.getReleaseTime(),
+            config.getHoldTime()
+        );
         
         std::cout << "\n[AudioConducker initialized]\n";
 
@@ -69,22 +76,30 @@ int main(int argc, char* argv[])
         }
 
         std::cout 
-                << "\nAudioConducker is running...\n" 
                 << "\n*Focus application: " << config.getFocusApplication()
                 << "\n*Duck amount: " << config.getDuckAmount() * 100.f << "%\n"
+                << "\n-attack: " << config.getAttackTime() * 1000.f << "ms"
+                << "\n-release: " << config.getReleaseTime() * 1000.f << "ms"
+                << "\n-hold: " << config.getHoldTime() * 1000.f << "ms\n"
+                << "\nAudioConducker is running...\n" 
                 << "\nPress Ctrl+C to stop.\n" << '\n';
 
+        auto lastTime = Clock::now();
+
         while(running.load()){
+            auto now = Clock::now();
+
+            float deltaTime = std::chrono::duration<float>(now - lastTime).count();
+            lastTime = now;
+
             monitor.update();
-            
-            if(isWatchNodes)
-                monitor.watchNodes();
+            if(isWatchNodes) monitor.watchNodes();
 
             auto focus = monitor.findStreamByApplication(config.getFocusApplication());
             
-            engine.process(focus);
+            engine.process(focus, deltaTime);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
         
         engine.shutDown();

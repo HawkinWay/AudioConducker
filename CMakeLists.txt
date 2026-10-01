@@ -37,6 +37,7 @@ add_library(AudioConduckerCore
     src/core/AudioMonitor.cpp
     src/core/ConfigManager.cpp
     src/core/DuckingEngine.cpp
+    src/core/VolumeSmoother.cpp
 
     src/platform/pipewire/NodeObserver.cpp
     src/platform/pipewire/PipeWireContext.cpp

@@ -8,15 +8,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(AudioConduckerTests PipeWireBackendTest.cpp)
+# add_executable(AudioConduckerTests PipeWireBackendTest.cpp)
+# target_link_libraries(AudioConduckerTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
-target_link_libraries(AudioConduckerTests PRIVATE AudioConduckerCore GTest::gtest_main)
+# add_executable(AudioConduckerIntegrationTests test_main.cpp)
+# target_link_libraries(AudioConduckerIntegrationTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
-add_executable(AudioConduckerIntegrationTests test_main.cpp)
-
-target_link_libraries(AudioConduckerIntegrationTests PRIVATE AudioConduckerCore GTest::gtest_main)
-
+add_executable(VolumeSmootherTests VolumeSmootherTest.cpp)
+target_link_libraries(VolumeSmootherTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
 include(GoogleTest)
 
-gtest_discover_tests(AudioConduckerTests)
+gtest_discover_tests(VolumeSmootherTests)

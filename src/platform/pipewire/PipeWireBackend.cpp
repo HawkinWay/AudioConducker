@@ -10,15 +10,6 @@ PipeWireBackend::PipeWireBackend(PipeWireContext& context): context_(context){
     );
 }
 
-// PipeWireBackend::~PipeWireBackend(){
-//     for(auto& node : nodes_){
-//         struct DestroyProxyData data = {
-//             .proxy = reinterpret_cast<struct pw_proxy*>(node.second),
-//         };
-//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-//     }
-// }
-
 PipeWireBackend::~PipeWireBackend() = default;
 
 void PipeWireBackend::initialize(){
@@ -28,7 +19,6 @@ void PipeWireBackend::initialize(){
 void PipeWireBackend::shutdown(){
     spdlog::info("Shutting down PipeWire backend");
 
-    // int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, this, sizeof(this), true, nullptr);
     int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_shutdown, 0, nullptr, 0, true, this);
 
     if(result < 0){
@@ -44,21 +34,12 @@ std::vector<AudioStream> PipeWireBackend::getStreams(){
 
     std::vector<AudioStream> result;
 
-    // auto streams = observer_->getStreams();
     result.reserve(streams_.size());
 
-    // for(auto& stream : streams){
-    //     auto it = volumes_.find(stream.id);
-
-    //     if(it != volumes_.end()){
-    //         stream.volume = it->second;
-    //     }
-    // }
     for(const auto& stream : streams_){
         result.push_back(stream.second);
     }
 
-    // return stream;
     return result;
 }
 
@@ -72,28 +53,12 @@ void PipeWireBackend::setVolume(StreamId id, float volume){
         .volume = volume,
     };
 
-    // spdlog::info(
-    //     "Queueing setVolume({}, {})",
-    //     id,
-    //     volume
-    // );
+
     int result = pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_set_volume, 0, &data, sizeof(data), 1, nullptr);
-    // spdlog::info(
-    //     "pw_loop_invoke returned {}, setVolume({}, {})",
-    //     result,
-    //     id,
-    //     volume
-    // );
+
 }
 
 void PipeWireBackend::setVolumeInternal(StreamId id, float volume){
-    // spdlog::info(
-    //     "setVolume({}, {}) called from thread {}",
-    //     id,
-    //     volume,
-    //     std::hash<std::thread::id>{}(std::this_thread::get_id())
-    // );
-
     spdlog::trace(
         "[setVolumeInternal] node={} volume={}",
         id,
@@ -131,94 +96,9 @@ int PipeWireBackend::do_set_volume(struct spa_loop *loop, bool async, uint32_t s
     return 0;
 }
 
-// int PipeWireBackend::do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-//     const auto* pd = static_cast<const DestroyProxyData*>(data);
-//     if(pd->proxy){
-//         pw_proxy_destroy(pd->proxy);
-//     }
-//     return 0;
-// }
-
-#if 0
-void PipeWireBackend::updateVolumeFromProps(const spa_pod* param){
-    if (!spa_pod_is_object(param)) {
-        return;
-    }
-
-    const auto* object = reinterpret_cast<const spa_pod_object*>(param);
-    const spa_pod_prop* prop = nullptr;
-
-    SPA_POD_OBJECT_FOREACH(object, prop){
-        if(prop->key != SPA_PROP_channelVolumes) {
-            continue;
-        }
-
-        const spa_pod* value = &prop->value;
-
-        if (!spa_pod_is_array(value)) {
-            continue;
-        }
-
-        const auto* array = reinterpret_cast<const spa_pod_array*>(value);
-        if(array->body.child.type != SPA_TYPE_Float){
-            continue;
-        }
-
-        const float* volumes = static_cast<const float*>(SPA_POD_BODY(&array->body));
-        const uint32_t count = array->body.child.size / sizeof(float);
-
-        if(count == 0)  continue;
-
-        float sum = 0.f;
-
-        for(uint32_t i = 0; i < count; i++){
-            sum += volumes[i];
-        }
-
-        const float average = sum / static_cast<float>(count);
-
-        audioStream_.volume = average;
-
-        spdlog::info(
-            "PipeWireStream {} volume updated: {}",
-            audioStream_.id,
-            audioStream_.volume
-        );
-
-        break;
-
-    }
-
-    spa_pod_parser parser;
-    spa_pod_parser_init(&parser, nullptr, 0);
-
-    uint32_t prop;
-    uint32_t flags;
-
-    const float* volumes = nullptr;
-    uint32_t n_volume = 0;
-
-    int res;
-
-    while((res = spa_pod_parser_get(&parser, param, SPA_TYPE_Object, nullptr)) >= 0){
-
-    }
-}
-
-void PipeWireBackend::on_param(void *data, int seq, int32_t id, uint32_t index, uint32_t next, const struct spa_pod *param){
-    auto *self = static_cast<PipeWireBackend*>(data);
-    if(param == nullptr)    return;
-
-    if(id == SPA_PARAM_Props){
-        self->updateVolumeFromProps(param);
-    }
-}
-#endif
 
 int PipeWireBackend::do_shutdown(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data){
-    // auto* self = static_cast<PipeWireBackend*>(
-    //     const_cast<void*>(data)
-    // );
+
     auto* self = static_cast<PipeWireBackend*>(user_data);
 
     spdlog::info("Destroying PipeWire backend resources...");
@@ -311,16 +191,6 @@ void PipeWireBackend::onNodeInfo(void *data, const struct pw_node_info *info){
     stream.mediaName = nodeData->mediaName;
     stream.controllable = true;
 
-    // spdlog::warn("[Backend onNodeInfo()] media_name = {}", stream.mediaName);
-
-    // if (stream.application == "mpv") {
-    //     spdlog::info(
-    //         "[MPV] node={} volume={} mediaName='{}'",
-    //         stream.id,
-    //         stream.volume,
-    //         stream.mediaName
-    //     );
-    // }
 }
 
 
@@ -381,7 +251,6 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
 }
 
 
-
 void PipeWireBackend::onNodeAdded(StreamId id){
     auto node = reinterpret_cast<pw_node*>(
         pw_registry_bind(
@@ -420,15 +289,7 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     node_data_[id] = std::move(nodeData);
 
-    // 查询真实 volume
     queryVolume(id);
-
-    // auto stream = observer_->getStreamById(id);
-
-    // if(!stream){
-    //     spdlog::error("Stream {} not found", id);
-    //     return;
-    // }
 
     auto monitor = std::make_unique<PipeWireStream>(
         context_,
@@ -444,26 +305,6 @@ void PipeWireBackend::onNodeAdded(StreamId id){
 
     spdlog::debug("Monitoring node {}", id);
 }
-
-// void PipeWireBackend::onNodeRemoved(StreamId id){
-//     spdlog::info("Removing node {}", id);
-
-//     auto it = nodes_.find(id);
-//     if(it != nodes_.end()){
-//         struct DestroyProxyData data = {
-//             .proxy = reinterpret_cast<pw_proxy*>(it->second),
-//         };
-
-//         pw_loop_invoke(pw_main_loop_get_loop(context_.getMainLoop()), do_destroy_proxy, 0, &data, sizeof(data), 0, nullptr);
-        
-//         nodes_.erase(id);
-//     }
-
-//     monitors_.erase(id);
-//     // volumes_.erase(id);
-//     node_data_.erase(id);
-//     streams_.erase(id);
-// }
 
 void PipeWireBackend::onNodeRemoved(StreamId id){
     spdlog::debug("[PipeWireBackend] onNodeRemoved {}", id);
@@ -489,7 +330,6 @@ void PipeWireBackend::onActivityChanged(StreamId id, bool active){
     auto it = streams_.find(id);
     if(it == streams_.end())    return;
 
-    //observer_->setActive(id, active);
     it->second.isActive = active;
 }
 

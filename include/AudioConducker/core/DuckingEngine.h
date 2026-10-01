@@ -2,29 +2,52 @@
 
 #include "AudioConducker/audio/IAudioBackend.h"
 #include "AudioConducker/core/Logger.h"
+#include "AudioConducker/core/VolumeSmoother.h"
 #include <vector>
 #include <unordered_map>
 #include <optional>
+
+using Clock = std::chrono::steady_clock;
 
 namespace AudioConducker{
 
 class DuckingEngine{
 public:
-    DuckingEngine(AudioBackend& backend, float duckAmount = 0.8f);
+    DuckingEngine(
+        AudioBackend& backend, 
+        float duckAmount = 0.5f, 
+        float attackTime = 0.08f, 
+        float releaseTime = 0.5f, 
+        float holdTime = 0.4f
+    );
 
-    void process(std::optional<StreamId> focusStream);
+    void process(std::optional<StreamId> focusStream, float deltaTime);
     
     void shutDown();
 
 private:
-	void restore();
+    void updateDucking(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams, float deltaTime);
     
-	void duck(StreamId focusStream, const std::vector<AudioStream>& streams);
+    void updateRestore(float deltaTime);
+
+    void syncWithStreams(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams);
 
     AudioBackend& backend_;
+    
     float duckAmount_;
-    std::unordered_map<StreamId, float> originalVolumes_;
-    bool isActive_{false};
+    float attackTime_;
+    float releaseTime_;
+    std::chrono::milliseconds holdTime_;
+    
+    std::optional<Clock::time_point> lastTime_; 
+
+    struct StreamState{
+        float originalVolume{1.f};
+        VolumeSmoother smoother{0.1f, 0.3f};
+    };
+    std::unordered_map<StreamId, StreamState> states_;
+    
+    // bool isActive_{false};
 };
 
 } // namespace AudioConducker

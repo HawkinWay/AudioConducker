@@ -45,16 +45,6 @@ private:
 
 	static int do_set_volume(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
 
-	// struct DestroyProxyData {
-    // 	struct pw_proxy* proxy;
-	// };
-	
-	// static int do_destroy_proxy(struct spa_loop *loop, bool async, uint32_t seq, const void *data, size_t size, void *user_data);
-	
-	// void updateVolumeFromProps(const spa_pod* param);
-
-    // static void on_param(void *data, int seq, int32_t id, uint32_t index, uint32_t next, const struct spa_pod *param);
-
 	struct NodeData {
 		PipeWireBackend* backend;
 		StreamId id;
@@ -93,13 +83,9 @@ private:
 private:
 	PipeWireContext& context_;
 	
-	// struct NodeInfo{
-	// 		AudioStream stream;
-	// 		struct pw_node* node;
-	// };
-	std::unordered_map<StreamId, struct pw_node*> nodes_;	// use STL to replace NodeInfo above
+	std::unordered_map<StreamId, struct pw_node*> nodes_;	// use STL to replace struct NodeInfo
 	std::unordered_map<StreamId, std::unique_ptr<PipeWireStream>> monitors_;
-    // std::unordered_map<StreamId, float> volumes_;
+
 	std::unordered_map<StreamId, std::unique_ptr<NodeData>> node_data_;
 	std::unordered_map<StreamId, AudioStream> streams_;
 
