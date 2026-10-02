@@ -68,3 +68,13 @@ TEST(VolumeSmootherTest, CanReverseDirection)
 
     EXPECT_FLOAT_EQ(volume, 1.0f);
 }
+
+TEST(VolumeSmootherTest, NegativeTimeDoesNotCrashOrProduceNaN){
+    AudioConducker::VolumeSmoother smoother(-0.1f, -0.3f);
+
+    smoother.setCurrent(1.f);
+    smoother.setTarget(0.f);
+    float v = smoother.process(0.05f);
+    EXPECT_TRUE(std::isfinite(v));
+
+}
