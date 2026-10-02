@@ -5,9 +5,9 @@
 
 namespace AudioConducker{
 
-class AudioBackend{
+class IAudioBackend{
 public:
-    virtual ~AudioBackend() = default;
+    virtual ~IAudioBackend() = default;
 
     virtual std::vector<AudioStream> getStreams() = 0;
 
