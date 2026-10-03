@@ -1,0 +1,42 @@
+name: CI Linux
+
+# events triggered
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# jobs: test or build or deploy
+jobs:
+  build-and-test:
+    name: ${{ matrix.os}}
+    # runs on specified virtual machine, here is the latest Ubuntu
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - fedora-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt update && sudo apt install -y cmake g++ libpipewire-0.3-dev
+
+      - name: Install dependencies (Fedora)
+        if: matrix.os == 'fedora-latest'
+        run: sudo dnf update && sudo dnf install -y cmake gcc-c++ pipewire-devel
+
+      - name: Configure CMake 
+        run: cmake -B build/ -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+
+      - name: Build project
+        run: cmake --build build/ --parallel 
+      
+      - name: Run tests
+        run: ctest --test-dir build/ --output-on-failure
