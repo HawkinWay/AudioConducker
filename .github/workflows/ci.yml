@@ -33,7 +33,7 @@ jobs:
         run: sudo dnf update && sudo dnf install -y cmake gcc-c++ pipewire-devel
 
       - name: Configure CMake 
-        run: cmake -B build/ -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+        run: cmake -B build/ -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON -DBUILD_PIPEWIRE_TESTS=OFF
 
       - name: Build project
         run: cmake --build build/ --parallel 

@@ -26,6 +26,7 @@ pkg_check_modules(
 
 # Build options
 option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_PIPEWIRE_TESTS "Build PipeWire integration tests" OFF)
 
 # Core library
 add_library(AudioConduckerCore

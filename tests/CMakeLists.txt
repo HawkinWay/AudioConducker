@@ -8,12 +8,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(PipeWireBackendTests PipeWireBackendTests.cpp)
-target_link_libraries(PipeWireBackendTests PRIVATE AudioConduckerCore GTest::gtest_main)
-
-# add_executable(AudioConduckerIntegrationTests test_main.cpp)
-# target_link_libraries(AudioConduckerIntegrationTests PRIVATE AudioConduckerCore GTest::gtest_main)
-
 add_executable(ActivityDetectorTests ActivityDetectorTests.cpp)
 target_link_libraries(ActivityDetectorTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
@@ -27,16 +21,21 @@ add_executable(VolumeSmootherTests VolumeSmootherTests.cpp)
 target_link_libraries(VolumeSmootherTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
 
-
-include(GoogleTest)
-
 set(TEST_TARGETS
     ActivityDetectorTests
     ConfigManagerTests
     DuckingEngineTests
     VolumeSmootherTests
-    PipeWireBackendTests
 )
+
+if(BUILD_PIPEWIRE_TESTS)
+        add_executable(PipeWireBackendTests PipeWireBackendTests.cpp)
+        target_link_libraries(PipeWireBackendTests PRIVATE AudioConduckerCore GTest::gtest_main)
+
+        list(APPEND TEST_TARGETS PipeWireBackendTests)
+endif()
+
+include(GoogleTest)
 
 # foreach loop, enable ctest --test-dir build/ can find these files
 foreach(t ${TEST_TARGETS})
