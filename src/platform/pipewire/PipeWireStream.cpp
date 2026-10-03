@@ -38,7 +38,7 @@ void PipeWireStream::connect(StreamId id){
     uint32_t n_params = 0; 
     uint8_t buffer[1024];
     struct spa_pod_builder builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
-    const struct spa_audio_info_raw info = SPA_AUDIO_INFO_RAW_INIT( .format = SPA_AUDIO_FORMAT_F32 );
+    struct spa_audio_info_raw info = SPA_AUDIO_INFO_RAW_INIT( .format = SPA_AUDIO_FORMAT_F32 );
 
     params[n_params++] = spa_format_audio_raw_build(
                             &builder, 
