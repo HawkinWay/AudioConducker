@@ -21,7 +21,7 @@ bool ActivityDetector::process(const float* samples, size_t count){
 }
 
 float ActivityDetector::getRMS(const float* samples, size_t count) const{
-    if(count == 0)  return false;
+    if(count == 0)  return 0.f;
 
     float sum =  0.f;
     for(size_t i = 0; i < count; i++){
@@ -32,5 +32,10 @@ float ActivityDetector::getRMS(const float* samples, size_t count) const{
 
     return rms;
 }
+
+float ActivityDetector::getThreshold() const{
+    return threshold_;
+}
+
 
 } // namespace AudioConducker

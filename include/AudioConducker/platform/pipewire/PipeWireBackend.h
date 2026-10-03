@@ -18,9 +18,14 @@
 #include <thread>
 #include <mutex>
 
+/*
+  Threading model: nodes_, node_data_, monitors_ are owned by the PipeWire main-loop thread. 
+  Cross-thread requests must go through pw_loop_invoke. streams_ is the only shared snapshot (streamMutex_).
+*/
+
 namespace AudioConducker{
 
-class PipeWireBackend: public AudioBackend{
+class PipeWireBackend: public IAudioBackend{
 public:
 	explicit PipeWireBackend(PipeWireContext& context);
 

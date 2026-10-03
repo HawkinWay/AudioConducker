@@ -3,8 +3,7 @@
 namespace AudioConducker{
 
 VolumeSmoother::VolumeSmoother(float attackTime, float releaseTime): attackTime_(attackTime), releaseTime_(releaseTime){
-    assert(attackTime > 0.f);
-    assert(releaseTime > 0.f);
+    
 }
 
 void VolumeSmoother::setCurrent(float current){

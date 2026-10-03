@@ -12,6 +12,8 @@ public:
 
     float getRMS(const float* samples, size_t count) const;
 
+    float getThreshold() const;
+
 private:
     float threshold_;
 };

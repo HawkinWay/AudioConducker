@@ -11,7 +11,7 @@ namespace AudioConducker{
 
 class AudioMonitor{
 public:
-    explicit AudioMonitor(AudioBackend& backend);
+    explicit AudioMonitor(IAudioBackend& backend);
 
     void update();
     void showNodes();
@@ -24,7 +24,7 @@ public:
     std::optional<StreamId> findStreamByApplication(const std::string& application) const;
 
 private:
-    AudioBackend& backend_;
+    IAudioBackend& backend_;
     std::vector<AudioStream> streams_;
     std::vector<AudioStream> previousStreams_;
 

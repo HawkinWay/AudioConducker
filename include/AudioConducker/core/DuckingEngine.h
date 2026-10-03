@@ -14,7 +14,7 @@ namespace AudioConducker{
 class DuckingEngine{
 public:
     DuckingEngine(
-        AudioBackend& backend, 
+        IAudioBackend& backend, 
         float duckAmount = 0.5f, 
         float attackTime = 0.08f, 
         float releaseTime = 0.5f, 
@@ -32,22 +32,23 @@ private:
 
     void syncWithStreams(std::optional<StreamId> focusStream, const std::vector<AudioStream>& streams);
 
-    AudioBackend& backend_;
+    IAudioBackend& backend_;
     
     float duckAmount_;
     float attackTime_;
     float releaseTime_;
-    std::chrono::milliseconds holdTime_;
-    
-    std::optional<Clock::time_point> lastTime_; 
+    //std::chrono::milliseconds holdTime_;
+    float holdTime_;
+
+    // std::optional<Clock::time_point> lastTime_;
+    float sinceLastActive_ = std::numeric_limits<float>::max();
 
     struct StreamState{
         float originalVolume{1.f};
         VolumeSmoother smoother{0.1f, 0.3f};
     };
     std::unordered_map<StreamId, StreamState> states_;
-    
-    // bool isActive_{false};
+
 };
 
 } // namespace AudioConducker

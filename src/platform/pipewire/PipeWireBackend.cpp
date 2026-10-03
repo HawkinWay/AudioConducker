@@ -44,8 +44,6 @@ std::vector<AudioStream> PipeWireBackend::getStreams(){
 }
 
 void PipeWireBackend::setVolume(StreamId id, float volume){
-    auto it = nodes_.find(id);
-    if(it == nodes_.end())  return;
     
     struct SetVolumeData data = {
         .self = this,
@@ -232,10 +230,7 @@ void PipeWireBackend::handleNodeProps(StreamId streamId, uint32_t id, const spa_
 
         const float average = sum / static_cast<float>(count);
 
-        // volumes_[streamId] = average;
         std::lock_guard<std::mutex> lock(streamMutex_);
-        // auto& streamVolume = streams_[streamId];
-        // streamVolume.volume = average;
         auto it = streams_.find(streamId);
         if(it != streams_.end())    it->second.volume = average;
 
@@ -323,7 +318,10 @@ void PipeWireBackend::onNodeRemoved(StreamId id){
 
     monitors_.erase(id);
     node_data_.erase(id);
-    streams_.erase(id);
+    {
+        std::lock_guard<std::mutex> lock(streamMutex_);
+        streams_.erase(id);
+    }
 }
 
 void PipeWireBackend::onActivityChanged(StreamId id, bool active){

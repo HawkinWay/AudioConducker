@@ -5,7 +5,7 @@
 
 namespace AudioConducker{
 
-AudioMonitor::AudioMonitor(AudioBackend& backend) : backend_(backend){}
+AudioMonitor::AudioMonitor(IAudioBackend& backend) : backend_(backend){}
 
 void AudioMonitor::update(){
     previousStreams_ = streams_;

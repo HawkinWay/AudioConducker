@@ -3,26 +3,17 @@
 
 namespace AudioConducker{
 
-DuckingEngine::DuckingEngine(AudioBackend& backend, float duckAmount, float attackTime, float releaseTime, float holdTime): 
+DuckingEngine::DuckingEngine(IAudioBackend& backend, float duckAmount, float attackTime, float releaseTime, float holdTime): 
         backend_(backend), 
         duckAmount_(duckAmount),
         attackTime_(attackTime),
         releaseTime_(releaseTime),
-        holdTime_(std::chrono::milliseconds(int(holdTime * 1000))){}
+        // holdTime_(std::chrono::milliseconds(int(holdTime * 1000)))
+        holdTime_(holdTime){}
 
 void DuckingEngine::process(std::optional<StreamId> focusStream, float deltaTime){
-    // Logger::info("DuckingEngine processing...\n");
-    auto streams = backend_.getStreams();
 
-    // static uint64_t processCount = 0;
-    // processCount++;
-    // if(!focusStream){
-    //     if(processCount % 20 == 0){
-    //         spdlog::debug("Focus stream not found -> restore");
-    //     }
-    //     restore();
-    //     return;
-    // }
+    auto streams = backend_.getStreams();
 
     bool focusActive = false;
 
@@ -36,16 +27,23 @@ void DuckingEngine::process(std::optional<StreamId> focusStream, float deltaTime
     }
     
     if(focusActive){
-        // duck(*focusStream, streams);
-        lastTime_ = Clock::now();
+        // lastTime_ = Clock::now();
+        sinceLastActive_ = 0.f;
         updateDucking(*focusStream, streams, deltaTime);
         
     }else{
-        // restore(deltaTime);
-        if(!lastTime_ || Clock::now() - *lastTime_ < holdTime_){
+        // if(!lastTime_ || Clock::now() - *lastTime_ < holdTime_){
             
-        }else{
+        // }
+        sinceLastActive_ += deltaTime;
+        if(sinceLastActive_ >= holdTime_){
             updateRestore(deltaTime);
+        }
+        else if(!states_.empty()){
+            for(auto& [id, state] : states_){
+                if(!state.smoother.isSmoothing())    continue;
+                backend_.setVolume(id, state.smoother.process(deltaTime));
+            }
         }
     }
 

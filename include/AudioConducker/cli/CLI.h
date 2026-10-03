@@ -9,7 +9,7 @@ namespace AudioConducker{
 
 class CLI{
 public:
-    CLI(int argc, char* argv[]/*, AudioBackend& backend*/);
+    CLI(int argc, char* argv[]/*, IAudioBackend& backend*/);
 
     bool parse(ConfigManager& config);
 

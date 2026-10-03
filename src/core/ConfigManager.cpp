@@ -30,17 +30,17 @@ void ConfigManager::setFocusApplication(const std::string& application){
 }
 
 void ConfigManager::setDuckAmount(float amount){
-    duckAmount_ = amount;
+    duckAmount_ = std::clamp(amount, 0.f, 100.f);
 }
 
 void ConfigManager::setAttackTime(float attackTime){
-    attackTime_ = attackTime;
+    attackTime_ = std::clamp(attackTime, 0.005f, 0.5f);
 }
 void ConfigManager::setReleaseTime(float releaseTime){
-    releaseTime_ = releaseTime;
+    releaseTime_ = std::clamp(releaseTime, 0.005f, 3.f);
 }
 void ConfigManager::setHoldTime(float holdTime){
-    holdTime_ = holdTime;
+    holdTime_ = std::clamp(holdTime, 0.005f, 2.f);
 }
 
 void ConfigManager::setLogLevel(const std::string& logLevel){
