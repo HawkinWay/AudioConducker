@@ -2,9 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A cross-platform automatic audio ducking for desktop applications.
+A cross-platform (**now Linux only**) automatic audio ducking for desktop applications.
 
 AudioConducker automatically lowers the volume of one application when another application starts playing audio.
+
+
+![gif demo](docs/assets/AudioConducker.gif)
 
 ---
 
@@ -35,6 +38,71 @@ AudioConducker automatically lowers the volume of one application when another a
 
 ---
 
+## Prject Structure
+
+```txt
+AudioConducker/
+├── CMakeLists.txt              # Build configuration
+├── LICENSE                     # MIT License
+├── README.md                   # This file
+├── .gitignore
+├── cmake/
+│   └── Dependencies.cmake      # Third-party dependency management (spdlog)
+├── docs/
+│   ├── architecture.md         # Architecture documentation
+│   ├── Workflow.md             # PipeWire workflow reference
+│   ├── Command_Line.md         # CLI usage documentation
+│   ├── DebugErrors.md          # Debug error log
+│   └── AudioConduckerLog.txt   # Application log
+├── include/
+│   └── AudioConducker/
+│       ├── audio/
+│       │   ├── ActivityDetector.h
+│       │   ├── AudioStream.h
+│       │   └── IAudioBackend.h
+│       ├── cli/
+│       │   └── CLI.h
+│       ├── core/
+│       │   ├── AudioMonitor.h
+│       │   ├── ConfigManager.h
+│       │   ├── DuckingEngine.h
+│       │   ├── Logger.h
+│       │   └── VolumeSmoother.h
+│       └── platform/
+│           └── pipewire/
+│               ├── NodeObserver.h
+│               ├── PipeWireBackend.h
+│               ├── PipeWireContext.h
+│               └── PipeWireStream.h
+├── src/
+│   ├── main.cpp
+│   ├── audio/
+│   │   └── ActivityDetector.cpp
+│   ├── cli/
+│   │   └── CLI.cpp
+│   ├── core/
+│   │   ├── AudioMonitor.cpp
+│   │   ├── ConfigManager.cpp
+│   │   ├── DuckingEngine.cpp
+│   │   ├── Logger.cpp
+│   │   └── VolumeSmoother.cpp
+│   └── platform/
+│       └── pipewire/
+│           ├── NodeObserver.cpp
+│           ├── PipeWireBackend.cpp
+│           ├── PipeWireContext.cpp
+│           └── PipeWireStream.cpp
+└── tests/
+    ├── CMakeLists.txt
+    ├── ActivityDetectorTests.cpp
+    ├── ConfigManagerTests.cpp
+    ├── DuckingEngineTests.cpp
+    ├── PipeWireBackendTests.cpp
+    └── VolumeSmootherTests.cpp
+```
+
+---
+
 ## How It Works
 
 AudioConducker follows a layered architecture with strict platform independence:
@@ -54,8 +122,10 @@ Application (main) → Core Logic → Abstraction Interface → Platform Backend
 | **System Audio Layer** | OS-level audio services and individual application audio streams |
 
 
+#### Learn more about:
 
-[Learn more](docs/Workflow.md)
+- [The project architecute](docs/architecture.md)  
+- [PipeWire in this project](docs/PipeWireWorkflow.md)
 
 ---
 
