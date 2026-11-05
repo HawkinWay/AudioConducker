@@ -20,12 +20,16 @@ target_link_libraries(DuckingEngineTests PRIVATE AudioConduckerCore GTest::gtest
 add_executable(VolumeSmootherTests VolumeSmootherTests.cpp)
 target_link_libraries(VolumeSmootherTests PRIVATE AudioConduckerCore GTest::gtest_main)
 
+add_executable(LatencyBenchmarkTests LatencyBenchmarkTests.cpp)
+target_link_libraries(LatencyBenchmarkTests PRIVATE AudioConduckerCore GTest::gtest_main)
+
 
 set(TEST_TARGETS
     ActivityDetectorTests
     ConfigManagerTests
     DuckingEngineTests
     VolumeSmootherTests
+    LatencyBenchmarkTests
 )
 
 if(BUILD_PIPEWIRE_TESTS)
