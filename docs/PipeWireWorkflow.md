@@ -1,11 +1,5 @@
-# AudioConducker Work Flow
+# PipeWire Workflow in AudioConducker
 
-
-## AudioBackend, the interface
-
-* abstract class, connect to backends from different platform
-
-## PipeWire
 
 Before learning AudioConducker, let's understand PipeWire workflow first:
 
@@ -54,7 +48,7 @@ We have 4 classes in platform/pipewire:
 - PipeWireContext
 - NodeObserver
 - PipeWireStream
-- PipeWireBackend: public AudioBackend
+- PipeWireBackend: public IAudioBackend
 
 #### PipeWireContext
 
