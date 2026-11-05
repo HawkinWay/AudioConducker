@@ -7,7 +7,7 @@ A cross-platform (**now Linux only**) automatic audio ducking for desktop applic
 AudioConducker automatically lowers the volume of one application when another application starts playing audio.
 
 
-![gif demo](docs/assets/AudioConducker.gif)
+![gif demo](https://github.com/HawkinWay/AudioConducker/releases/download/untagged-9fbc29427dcee9f764d5/AudioConducker.gif)
 
 ---
 
