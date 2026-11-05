@@ -34,11 +34,11 @@ AudioConducker automatically lowers the volume of one application when another a
 
 🧪 **Automated testing**
 - Unit tests with GoogleTest
-- Separate PipeWire integration tests for Linux enviornments
+- Separate PipeWire integration tests for Linux environments
 
 ---
 
-## Prject Structure
+## Project Structure
 
 ```txt
 AudioConducker/
@@ -124,7 +124,7 @@ Application (main) → Core Logic → Abstraction Interface → Platform Backend
 
 #### Learn more about:
 
-- [The project architecute](docs/architecture.md)  
+- [The project architectute](docs/architecture.md)  
 - [PipeWire in this project](docs/PipeWireWorkflow.md)
 
 ---
@@ -162,7 +162,7 @@ cd AudioConducker
 Configure and build it:
 
 ```bash
-cmake -B build/ -S . -DCMAKE_BULD_TYPE=Release
+cmake -B build/ -S . -DCMAKE_BUILD_TYPE=Release
 # build test options: -DBUILD_TESTS=ON -DBUILD_PIPEWIRE_TESTS=ON
 cd build/
 cmake --build . --parallel
@@ -184,7 +184,7 @@ Get [instructions](docs/Command_Line.md) for use:
 
 | Option | Description |
 |--------|-------------|
-| `-h, --help` | Show help message |
+| `-H, --help` | Show help message |
 | `-f, --focus <app>` | Select the focus (foreground) application |
 | `-d, --duck <amount>` | Set duck amount (e.g., `-d 60` reduces background to ~40% volume) |
 | `-a, --attack <ms>` | Set attack time in milliseconds |
