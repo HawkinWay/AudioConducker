@@ -24,7 +24,7 @@ Application/Main
 * **`DuckingEngine`:** Evaluates state from `AudioMonitor` against rules in `ConfigManager`.
     * Detects the primary focus stream (e.g., active voice call or primary app).
     * Calculates ducking decisions for secondary streams.
-    * Manages smooth volume transitions and dispatches commands to the **Abstraction Layer**.
+* **`VolumeSmoother`:** Manages smooth volume transitions (**Linear Ramp**) and dispatches commands to the **Abstraction Layer**.
 
 ## 3. Abstraction Layer
 
@@ -33,15 +33,19 @@ Application/Main
 ### Data Structures: *AudioStream*
 ```cpp
 struct AudioStream {
-    StreamID id;
+    StreamId id;
     std::string name;
-    float volume;
-    bool isActive;
-    // ...
+    std::string application;
+    std::string mediaClass;
+    std::string mediaName;
+    float volume = 1.f;
+    uint32_t channelCount = 2;
+    bool isActive = false;
+    bool controllable = true;
 };
 ```
 
-### AudioBackend(Interface)
+### IAudioBackend(Interface)
 
 *Defines abstract virtual functions for querying streams and adjusting audio levels.*
 
@@ -51,7 +55,7 @@ struct AudioStream {
 
 ## 4. Platform Layer
 
-*Platform-specific implementations of the `AudioBackend` interface.*
+*Platform-specific implementations of the `IAudioBackend` interface.*
 
 - Pipewrie
 
@@ -69,7 +73,7 @@ Platform backends communicate with the operating system audio framework, which m
 
 1. **Strict Platform Independence**: The Core Logic Layer (`DuckingEngine`, `AudioMonitor`, `ConfigManager`) never interacts directly with OS-specific audio APIs.
 
-2. **Dependency Inversion**: Platform implementations depend on the abstract AudioBackend interface, allowing new platform backends to be added without modifying the core ducking logic.
+2. **Dependency Inversion**: Platform implementations depend on the abstract IAudioBackend interface, allowing new platform backends to be added without modifying the core ducking logic.
 
 3. **Unidirectional Control Flow**: Commands strictly flow downward from `Application` $\rightarrow$ `Core Logic` $\rightarrow$ `Abstraction Interface` $\rightarrow$ `Platform Backend` $\rightarrow$ `OS System Audio`. Data (streams/states) flows upward via the abstraction layer interfaces.
 
